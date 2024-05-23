@@ -7,11 +7,8 @@
 	<meta name="viewport"
 		content="width=device-width,
 				initial-scale=1">
-	<title>GFG Bulma starter template</title>
+	<title>Scanner runner</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
-
-{#    <title>{% block title %}{% endblock %} - My Webpage</title>#}
-
     {% block head %}
     {% endblock %}
 </head>
@@ -20,45 +17,45 @@
 
 <div class="columns">
   <div class="column is-one-fifth">
+        <br/>
 
 		<div class="box">
 
-                <a href="{{ url_for("create") }}" class="button is-small is-responsive is-primary is-dark">
-                    create
-                </a>
-<br/>
-<br/>
-            {% for scan in scans %}
-  <div class="control">
-{#    <a class="tags has-addons">#}
-    <a class="tags has-addons is-hoverable" href="{{ url_for("scan_exec", id=scan["id"]) }}">
-      <span class="tag is-dark"><abbr title="{{ scan['timestamp'] }}">{{ short_date(scan['timestamp']) }}</abbr> </span>
-      <span class="tag is-dark"><abbr title="{{ scan['repo']}}">{{ short_repo(scan['repo']) }}</abbr></span>
-      <span class="tag is-info">{{ scan['scanner'] }}</span>
-    </a>
-  </div><br/>
-            {% endfor %}
-<hr/>
-        {{ scans[0] }}
+            <a href="{{ url_for('create') }}" class="button is-small is-responsive is-primary is-dark">
+                create
+            </a><br/>
+            <a href="{{ url_for('addsite') }}" class="button is-small is-responsive is-primary is-dark">
+                add site
+            </a><br/>
+            <a href="{{ url_for('buildtest') }}" class="button is-small is-responsive is-primary is-dark">
+                build test
+            </a>
 
-{#            <% for scan in scans %>#}
-{#                <a href="{{ url_for("create") }}" class="button is-small is-responsive is-primary is-dark">#}
-{#                    {{ scan.timestamp }} - {{ scan.repo }} - {{ scan.scanner }}#}
-{#                </a>#}
-{#            <% endfor %>#}
+            <br/><br/>
+
+            {% for scan in scans %}
+              <div class="control">
+                <a class="tags has-addons is-hoverable" href="{{ url_for("scan_exec", id=scan["id"]) }}">
+                  <span class="tag is-dark"><abbr title="{{ scan['timestamp'] }}">{{ short_date(scan['timestamp']) }}</abbr> </span>
+                  <span class="tag is-dark"><abbr title="{{ scan['repo']}}">{{ short_repo(scan['repo']) }}</abbr></span>
+                  <span class="tag is-info">{{ scan['scanner'] }}</span>
+                </a>
+              </div><br/>
+            {% endfor %}
+
+            <hr/>
 
            <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
            <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
 		</div>
 
   </div>
+
   <div class="column">
         <br/>
 		<div class="box">
             {% block content %}{% endblock %}
 		</div>
-
-
   </div>
 
 

@@ -1,11 +1,16 @@
 import json
+import os
 
 import dramatiq
-from flask import Flask, render_template, request, url_for
+from dramatiq.brokers.redis import RedisBroker
+from flask import Flask, render_template, request, url_for, redirect
 
-from model import BatchExec, DockerExec
+from model import BatchExec, DockerExec, Execution
 
 app = Flask(__name__)
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+redis_broker = RedisBroker(host=REDIS_HOST)
+dramatiq.set_broker(redis_broker)
 
 
 def render(template, **kwargs):
@@ -22,6 +27,17 @@ def render(template, **kwargs):
 @app.route('/')
 def hello_world():  # put application's code here
     return render("index.html")
+
+
+@app.route('/exec/<eid>')
+def exec(eid: int):  # put application's code here
+    exec = Execution().get_by_id(eid)
+    lines = [line for line in exec.output_line]
+    lines.sort(key=lambda line: line.idx)
+    return render("scan.html",
+                  exec_fields={},
+                  big_fields={'output': '\r\n'.join(line.line for line in lines)})
+
 
 @app.route('/scan-exec/<id>')
 def scan_exec(id: int):  # put application's code here
@@ -52,10 +68,29 @@ def scan_exec(id: int):  # put application's code here
         raw = [r for r in reports if r.is_raw][0]
         big_fields['raw'] = raw.content
 
-
     return render("scan.html",
                   exec_fields=exec_fields,
                   big_fields=big_fields)
+
+
+@app.route('/addsite/', methods=['GET', 'POST'])
+def addsite():
+    if request.method == 'POST':
+        e = Execution.Create(['git clone ' + request.form['site']],
+                             env={'GIT_SSH_COMMAND': "ssh -oStrictHostKeyChecking=no "})
+        add_keys_for_site.send(e.id)
+        return redirect(url_for('exec', eid=e.id), code=302)
+    return render('add_site.html')
+
+
+@app.route('/build/test', methods=['GET', 'POST'])
+def buildtest():
+    if request.method == 'POST':
+        e = Execution.Create(['docker build -t drunner/testscan:latest .'])
+        add_keys_for_site.send(e.id)
+        return redirect(url_for('exec', eid=e.id), code=302)
+    return render('build_test.html')
+
 
 
 @app.route('/create/', methods=('GET', 'POST'))
@@ -85,6 +120,18 @@ def create():
         execute_batch.send(b.id, [de.id for de in des])
     return render('create.html')
 
+@app.route('/api/scans/all', methods=('GET',))
+def scans():
+    return get_scans()
+
+
+def get_scans():
+    return [x.as_dict() for x in DockerExec.select()]
+
+
+@dramatiq.actor
+def add_keys_for_site(e_id: int):
+    pass
 
 @dramatiq.actor(time_limit=1200000)
 def execute_batch(batch, tasks=()):
@@ -104,13 +151,6 @@ def testme():
     # de.save()
     execute_batch.send(b.id, [de.id for de in des])
 
-
-def get_scans():
-    return [x.as_dict() for x in DockerExec.select()]
-
-@app.route('/api/scans/all', methods=('GET',))
-def scans():
-    return get_scans()
 
 
 if __name__ == '__main__':

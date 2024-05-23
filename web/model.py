@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import time
 
 from peewee import *
 
@@ -12,9 +13,14 @@ if os.environ.get('DBLOG', 'false').lower() == 'true':
     logger.addHandler(logging.StreamHandler())
 
 
-
-db = SqliteDatabase(os.path.join(
+DB_FILE = os.environ.get("DB", os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 'drunner.sqlite.db'))
+idx=0
+while not os.path.exists(DB_FILE):
+    print(idx)
+    idx+=1
+    time.sleep(1)
+db = SqliteDatabase(DB_FILE)
 
 
 class BaseModel(Model):
@@ -75,7 +81,7 @@ class Report(BaseModel):
 
 class Execution(BaseModel):
     docker = ForeignKeyField(DockerExec, backref='execs', null=True)
-    cmdargs = CharField(unique=False)
+    cmdargs = CharField(unique=False, null=True)
     wd = CharField(unique=False, null=True)
     env = CharField(unique=False, null=True)
     ret = IntegerField(unique=False, null=True)
@@ -86,7 +92,7 @@ class Execution(BaseModel):
         return f'<{self.id}: {self.cmdargs[:30]}  ({self.ret})>'
 
     @classmethod
-    def Create(cls, cmdargs, wd, env, docker=None):
+    def Create(cls, cmdargs=None, wd=None, env=None, docker=None):
         return Execution.create(
             docker=docker,
             cmdargs=json.dumps(cmdargs),

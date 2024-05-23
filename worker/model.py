@@ -5,16 +5,15 @@ import os
 
 from peewee import *
 
-## debug queries..
 logger = logging.getLogger('peewee')
 if os.environ.get('DBLOG', 'false').lower() == 'true':
     logger.setLevel(logging.DEBUG)
     logger.addHandler(logging.StreamHandler())
 
 
-
-db = SqliteDatabase(os.path.join(
+DB_FILE = os.environ.get("DB", os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 'drunner.sqlite.db'))
+db = SqliteDatabase(DB_FILE)
 
 
 class BaseModel(Model):
@@ -74,7 +73,7 @@ class Execution(BaseModel):
         return f'<{self.id}: {self.cmdargs[:30]}  ({self.ret})>'
 
     @classmethod
-    def Create(cls, cmdargs, wd, env, docker=None):
+    def Create(cls, cmdargs, wd=None, env=None, docker=None):
         return Execution.create(
             docker=docker,
             cmdargs=json.dumps(cmdargs),
@@ -99,6 +98,7 @@ class OutputLine(BaseModel):
 
 
 def init():
+    db = SqliteDatabase(DB_FILE)
     # Connect to our database.
     db.connect()
     # Create the tables.
@@ -107,3 +107,9 @@ def init():
 
 if __name__ == '__main__':
     init()
+else:
+    def invalid(fname):
+        file_stats = os.stat(fname)
+        return file_stats.st_size==0
+    if (not os.path.exists(DB_FILE)) or invalid(DB_FILE):
+        init()

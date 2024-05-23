@@ -1,4 +1,6 @@
 import datetime
+import json
+import os
 import time
 from queue import Queue
 import queue
@@ -77,7 +79,11 @@ def launch_thread(*args):
 
 def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True):
     ex.timestamp = datetime.datetime.now()
-    p = Popen(cmdargs, cwd=wd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    if not (env is None):
+        base = os.environ.copy()
+        base.update(env)
+        env = base
+    p = Popen(cmdargs, cwd=wd, env=env, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
     q = Queue()
     thread = threading.Thread(target=db_save, args=(q, debug))
@@ -100,8 +106,15 @@ def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True):
 
 
 # @dramatiq.actor
-def exec(cmdargs, wd='.', env=None, de: DockerExec=None):
-    e = Execution.Create(cmdargs, wd, env, docker=de)
+def exec(cmdargs=None, wd=None, env=None, de: DockerExec=None, e:Execution=None):
+    if e is None and cmdargs is None:
+        raise Exception("Either cmdargs or cmdargs must not be None")
+    if e is None:
+        e = Execution.Create(cmdargs, wd, env, docker=de)
+    else:
+        e.wd = wd
+        cmdargs = json.loads(e.cmdargs)
+        e.save()
     ret = _exec(e, cmdargs=cmdargs, wd=wd, env=env)
     e.save()
     return ret

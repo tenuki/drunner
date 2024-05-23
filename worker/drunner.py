@@ -6,10 +6,16 @@ import traceback
 from contextlib import contextmanager
 
 import dramatiq
+from dramatiq.brokers.redis import RedisBroker
 
 import worker
 import model
 from results import ResultsReport, Finding, Priority
+
+import redis
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+redis_broker = RedisBroker(host=REDIS_HOST)
+dramatiq.set_broker(redis_broker)
 
 
 @contextmanager
@@ -62,7 +68,6 @@ class ScannerRunner(object):
             self.m.save()
             with tempfile.TemporaryDirectory(prefix='drunner-'+self.m.scanner,
                                              suffix='tmp') as self.tmpdir:
-                # with SwitchDir(self.tmpdir):
                 return self._run()
         except:
             self.m.errors = traceback.format_exc()
@@ -97,8 +102,6 @@ class ScannerRunner(object):
 
         - tmpdir is expected to be mounted somewhere in the container
         """
-        ret = self.exec([f'pwd'])
-        ret = self.exec([f'ls -la'])
         ret = self.exec([f'git clone {self.repo} srcs'])
         if ret!=0:
             raise CloneFailed('git clone failed')
@@ -110,6 +113,27 @@ class ScannerRunner(object):
     def fetch_raw_output(self):
         with open(os.path.join(self.tmpdir, self.CONTAINER_RAW_REPORT_NAME), 'rb') as f:
             return f.read()
+
+    @classmethod
+    def Add_keys_for_site(cls, eid: int):
+        try:
+            with tempfile.TemporaryDirectory(prefix='drunner-addkey-',
+                                             suffix='tmp') as tmpdir:
+                e = model.Execution.get_by_id(eid)
+                r = worker.exec(wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
+        except:
+            traceback.print_exc()
+
+    @classmethod
+    def Build_test_scanner(cls, eid: int):
+        try:
+            # !!!!!! => getdir(__FILE__)...
+            with tempfile.TemporaryDirectory(prefix='drunner-build-test-',
+                                             suffix='tmp') as tmpdir:
+                e = model.Execution.get_by_id(eid)
+                r = worker.exec(wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
+        except:
+            traceback.print_exc()
 
 
 class ScoutRunner(ScannerRunner):
@@ -129,8 +153,7 @@ class ScoutRunner(ScannerRunner):
             name=f"Single {self.m.scanner} execution on {self.repo}@{self.commit}.",
             date=self.m.timestamp,
             composite=False,
-            scanners=[self.m.scanner],
-        )
+            scanners=[self.m.scanner])
 
         for line in raw_report.splitlines():
             try:
@@ -189,24 +212,33 @@ def execute_batch(batch_id, tasks_ids=()):
         execute_task.send(task_id)
 
 
+@dramatiq.actor
+def add_keys_for_site(e_id: int):
+    ScannerRunner.Add_keys_for_site(e_id)
+
+
+def test_add_site():
+    e = model.Execution.Create(['git clone git@github.com:tenuki/no-code.git'],
+                               env={'GIT_SSH_COMMAND': "ssh -oStrictHostKeyChecking=no "})
+    add_keys_for_site(e.id)
+
+
 if __name__ == '__main__':
+    test_add_site()
     # dr = DockerRunner.Create('git@github.com:CoinFabrik/scout-soroban-examples.git', 'main', 'vesting/', scanner='scout')
     # dr = ScannerRunner.Create('git@github.com:tenuki/no-code.git', 'main', '.', scanner='test')
     # dr.run()
-
-    report = ResultsReport(
-        name="Single {self.m.scanner} execution on {self.repo}@{self.commit}.",
-        date='self.m.timestamp',
-        composite=False,
-        scanners=['self.m.scanner'])
-    report.addFinding(Finding(name="vuln1 at x", category='vuln1',
-                              priority=Priority.Medium, scanner='self.m.scanner'))
-    report.addFinding(Finding(name="vuln9 at y", category='vuln9',
-                              priority=Priority.Low, scanner='self.m.scanner'))
-    report.addFinding(Finding(name="vuln5 at z", category='vuln5',
-                              priority=Priority.High, scanner='self.m.scanner'))
-    report.addFinding(Finding(name="vuln9 at t", category='vuln9',
-                              priority=Priority.Low, scanner='self.m.scanner'))
-    # print(report.to_json())
-
-
+    # report = ResultsReport(
+    #     name="Single {self.m.scanner} execution on {self.repo}@{self.commit}.",
+    #     date='self.m.timestamp',
+    #     composite=False,
+    #     scanners=['self.m.scanner'])
+    # report.addFinding(Finding(name="vuln1 at x", category='vuln1',
+    #                           priority=Priority.Medium, scanner='self.m.scanner'))
+    # report.addFinding(Finding(name="vuln9 at y", category='vuln9',
+    #                           priority=Priority.Low, scanner='self.m.scanner'))
+    # report.addFinding(Finding(name="vuln5 at z", category='vuln5',
+    #                           priority=Priority.High, scanner='self.m.scanner'))
+    # report.addFinding(Finding(name="vuln9 at t", category='vuln9',
+    #                           priority=Priority.Low, scanner='self.m.scanner'))
+    # # print(report.to_json())
