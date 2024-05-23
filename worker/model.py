@@ -48,6 +48,7 @@ class DockerExec(BaseModel):
     def __str__(self):
         return f'<{self.id}: B:{self.batch} {self.scanner}({self.repo}@{self.commit}:{self.path})>'
 
+
 class Report(BaseModel):
     docker = ForeignKeyField(DockerExec, backref='reports')
     is_raw = BooleanField(default=True)

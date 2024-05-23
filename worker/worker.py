@@ -77,7 +77,7 @@ def launch_thread(*args):
 
 def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True):
     ex.timestamp = datetime.datetime.now()
-    p = Popen(cmdargs, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    p = Popen(cmdargs, cwd=wd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
     q = Queue()
     thread = threading.Thread(target=db_save, args=(q, debug))
