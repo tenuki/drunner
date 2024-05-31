@@ -14,15 +14,23 @@ class Scanner:
 @dataclass
 class Finding:
     name: str
+    desc: str
     category: str
-    priority: Priority
-    scanner: Optional[Scanner] = None
+    level: Priority
+    filename: str
+    lineno: int
+    scanner: Scanner
+    jsonextra: str
 
     def as_dict(self):
         return {
             'name': self.name,
+            'desc': self.desc,
             'category': self.category,
-            'priority': self.priority.name,
+            'level': self.priority.name,
+            'filename': self.filename,
+            'lineno': self.lineno,
+            'jsonextra': self.jsonextra,
             'scanner': self.scanner if self.scanner is not None else '',
         }
 
