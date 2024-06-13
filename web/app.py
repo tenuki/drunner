@@ -5,7 +5,7 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from flask import Flask, render_template, request, url_for, redirect
 
-from model import BatchExec, DockerExec, Execution
+from model import BatchExec, DockerExec, Execution, Report
 
 app = Flask(__name__)
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
@@ -14,18 +14,22 @@ dramatiq.set_broker(redis_broker)
 
 
 def render(template, **kwargs):
-    new = {'url_for': url_for,
-           'scans': get_scans(),
+    new = {'scans': get_scans(),
            'lines': lambda x: len(x.splitlines()),
+           'batchs': get_batchs(),
+           'None': None,
            'short_repo':lambda x: '../'+x.rsplit('/', 1)[1].replace('.git', ''),
            'short_date':lambda d: str(d).split('.')[0].split('-', 1)[1].rsplit(':', 1)[0],
            }
+    for f in [len, url_for]:
+        new[f.__name__] = f
+    # print ("---> ", list(new.keys()))
     new.update(kwargs)
     return render_template(template, **new)
 
 
 @app.route('/')
-def hello_world():  # put application's code here
+def index():  # put application's code here
     return render("index.html")
 
 
@@ -38,6 +42,15 @@ def exec(eid: int):  # put application's code here
                   exec_fields={},
                   big_fields={'output': '\r\n'.join(line.line for line in lines)})
 
+@app.route('/batch/<id>')
+def batch(id: int):  # put application's code here
+    batch = BatchExec().get_by_id(id)
+    return render('batch.html', batch=batch)
+
+@app.route('/report/<id>')
+def report(id: int):  # put application's code here
+    report = Report().get_by_id(id)
+    return render('report.html', report=report)
 
 @app.route('/scan-exec/<id>')
 def scan_exec(id: int):  # put application's code here
@@ -92,7 +105,6 @@ def buildtest():
     return render('build_test.html')
 
 
-
 @app.route('/create/', methods=('GET', 'POST'))
 def create():
     if request.method == 'POST':
@@ -120,13 +132,21 @@ def create():
         execute_batch.send(b.id, [de.id for de in des])
     return render('create.html')
 
+
 @app.route('/api/scans/all', methods=('GET',))
 def scans():
     return get_scans()
 
 
 def get_scans():
-    return [x.as_dict() for x in DockerExec.select()]
+    return [x.as_dict() for x in DockerExec.select()
+                .where(DockerExec.batch != None)
+                .order_by(DockerExec.timestamp.desc())]
+
+
+def get_batchs():
+    return [x for x in
+            BatchExec.select().order_by(BatchExec.timestamp.desc())]
 
 
 @dramatiq.actor

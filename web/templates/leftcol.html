@@ -1,0 +1,24 @@
+<div class="buttons">
+    {% for link_button in ['index', 'create'] %}
+    <a class="button is-small is-responsive is-primary is-dark" href="{{ url_for(link_button) }}">
+        {{link_button}}
+    </a>
+    <br/>
+    {% endfor %}
+</div>
+
+<hr/>
+
+<div class="tags">
+    {% for batch in batchs %}
+    <div class="control">
+        <a class="tags has-addons is-hoverable" href="{{ url_for('batch', id=batch.id) }}">
+        <span class="tag is-dark"><abbr
+                title="{{ batch.timestamp }}">{{ short_date(batch.timestamp) }}</abbr> </span>
+        <span class="tag is-dark"><abbr title="{{ batch.name }}">{{ batch.name }}</abbr></span>
+        <span class="tag is-warning is-dark">{{ len(batch.scans) }}</span>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+<br/>

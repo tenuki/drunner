@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 import tempfile
 import traceback
 from contextlib import contextmanager
@@ -12,7 +11,8 @@ import worker
 import model
 from results import ResultsReport, Finding, Priority
 
-import redis
+from worker.scanners.scout import ScoutRunner
+
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 redis_broker = RedisBroker(host=REDIS_HOST)
 dramatiq.set_broker(redis_broker)
@@ -134,41 +134,6 @@ class ScannerRunner(object):
                 r = worker.exec(wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
         except:
             traceback.print_exc()
-
-
-class ScoutRunner(ScannerRunner):
-    IMAGE = 'coinfabrik/scout-image:latest'
-    CONTAINER_RAW_REPORT_NAME = os.path.join(ScannerRunner.OUTPUT_DIR_NAME, 'report.json')
-
-    def run_image(self):
-        cmd = (f'docker run -i --rm -e CARGO_TARGET_DIR=/tmp '
-               # f'-e RUST_BACKTRACE=full '
-               f'-e INPUT_TARGET=/scoutme/srcs/{self.path} '
-               f'-e INPUT_SCOUT_ARGS=" --output-format json --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}" '
-               f'-v {self.tmpdir}:/scoutme {self.IMAGE}')
-        self.exec([cmd])
-
-    def process_report(self, raw_report):
-        report = ResultsReport(
-            name=f"Single {self.m.scanner} execution on {self.repo}@{self.commit}.",
-            date=self.m.timestamp,
-            composite=False,
-            scanners=[self.m.scanner])
-
-        for line in raw_report.splitlines():
-            try:
-                msg = json.loads(line)
-                if not 'reason' in msg or msg['reason']!='compiler-message': continue
-                if not 'message' in msg: continue
-                if not 'level' in msg['message']: continue
-
-                report.addFinding(Finding(name=msg['message']['message'], category='',
-                        priority=Priority.Medium,
-                        scanner=self.m.scanner))
-            except:
-                print(f"Invalid line in output: '{line}'. ignoring..", file=sys.stderr)
-        return report
-
 
 
 class TestScanRunner(ScannerRunner):

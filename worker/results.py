@@ -14,20 +14,20 @@ class Scanner:
 @dataclass
 class Finding:
     name: str
-    desc: str
     category: str
     level: Priority
     filename: str
     lineno: int
     scanner: Scanner
     jsonextra: str
+    desc: Optional[str]
 
     def as_dict(self):
         return {
             'name': self.name,
             'desc': self.desc,
             'category': self.category,
-            'level': self.priority.name,
+            'level': self.level.name,
             'filename': self.filename,
             'lineno': self.lineno,
             'jsonextra': self.jsonextra,
@@ -72,3 +72,41 @@ class ResultsReport:
 
     def to_json(self, indent=None):
         return json.dumps(self.as_dict_ex(), indent=indent)
+
+
+@dataclass
+class SpanObject:
+    byte_end: int
+    byte_start: int
+    column_end: int
+    column_start: int
+    line_end: int
+    line_start: int
+    file_name: str
+
+    @classmethod
+    def FromJsonObj(cls, json_obj):
+        return cls(byte_end=json_obj['byte_end'], byte_start=json_obj['byte_start'],
+                   column_end=json_obj['column_end'], column_start=json_obj['column_start'],
+                   line_end=json_obj['line_end'], line_start=json_obj['line_start'],
+                   file_name=json_obj['file_name'])
+
+    def as_dict(self):
+        return {
+            'byte_end': self.byte_end,
+            'byte_start': self.byte_start,
+            'column_end': self.column_end,
+            'column_start': self.column_start,
+            'line_end': self.line_end,
+            'line_start': self.line_start,
+            'file_name': self.file_name
+        }
+
+
+@dataclass
+class SrcExtra:
+    filename: str
+    manifest: str
+
+    def as_dict(self):
+        return {'filename': self.filename, 'manifest': self.manifest}

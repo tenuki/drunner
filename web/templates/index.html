@@ -3,5 +3,12 @@
 {% block title %}Index{% endblock %}
 
 {% block content %}
-    <h1>/</h1>
+    <h1>/</h1><br/>
+
+    {% for batch in batchs %}
+        <a href="{{ url_for('batch', id=batch.id) }}">{{ batch.timestamp }} - {{ batch.name }} - {{batch.author}}
+        </a>
+        <br/>
+    {% endfor %}
+
 {% endblock %}

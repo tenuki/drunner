@@ -1,10 +1,9 @@
 import json
 import unittest
 from collections import defaultdict
-from dataclasses import dataclass
-from typing import List
 
-from worker.results import Finding, Scanner
+from worker.results import SpanObject, SrcExtra
+from worker.scanners.scout import ScoutVulnerability
 
 DATA = r"""{"reason":"compiler-artifact","package_id":"unicode-ident 1.0.12 (registry+https://github.com/rust-lang/crates.io-index)","manifest_path":"/usr/local/cargo/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/Cargo.toml","target":{"kind":["lib"],"crate_types":["lib"],"name":"unicode-ident","src_path":"/usr/local/cargo/registry/src/index.crates.io-6f17d22bba15001f/unicode-ident-1.0.12/src/lib.rs","edition":"2018","doc":true,"doctest":true,"test":true},"profile":{"opt_level":"0","debuginfo":2,"debug_assertions":true,"overflow_checks":true,"test":false},"features":[],"filenames":["/tmp/dylint/target/nightly-2023-12-16-x86_64-unknown-linux-gnu/debug/deps/libunicode_ident-02f147e3ca7fbe38.rlib","/tmp/dylint/target/nightly-2023-12-16-x86_64-unknown-linux-gnu/debug/deps/libunicode_ident-02f147e3ca7fbe38.rmeta"],"executable":null,"fresh":false}
 {"reason":"compiler-artifact","package_id":"itoa 1.0.11 (registry+https://github.com/rust-lang/crates.io-index)","manifest_path":"/usr/local/cargo/registry/src/index.crates.io-6f17d22bba15001f/itoa-1.0.11/Cargo.toml","target":{"kind":["lib"],"crate_types":["lib"],"name":"itoa","src_path":"/usr/local/cargo/registry/src/index.crates.io-6f17d22bba15001f/itoa-1.0.11/src/lib.rs","edition":"2018","doc":true,"doctest":true,"test":true},"profile":{"opt_level":"0","debuginfo":2,"debug_assertions":true,"overflow_checks":true,"test":false},"features":[],"filenames":["/tmp/dylint/target/nightly-2023-12-16-x86_64-unknown-linux-gnu/debug/deps/libitoa-add5260810035b6e.rlib","/tmp/dylint/target/nightly-2023-12-16-x86_64-unknown-linux-gnu/debug/deps/libitoa-add5260810035b6e.rmeta"],"executable":null,"fresh":false}
@@ -144,93 +143,6 @@ DATA = r"""{"reason":"compiler-artifact","package_id":"unicode-ident 1.0.12 (reg
 {"reason":"compiler-message","package_id":"avoid-core-mem-forget-vulnerable-1 0.1.0 (path+file:///scoutme/srcs/test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example)","manifest_path":"/scoutme/srcs/test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/Cargo.toml","target":{"kind":["cdylib"],"crate_types":["cdylib"],"name":"avoid-core-mem-forget-vulnerable-1","src_path":"/scoutme/srcs/test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/src/lib.rs","edition":"2021","doc":true,"doctest":false,"test":true},"message":{"rendered":"warning: 2 warnings emitted\n\n","$message_type":"diagnostic","children":[],"code":null,"level":"warning","message":"2 warnings emitted","spans":[]}}
 {"reason":"compiler-artifact","package_id":"avoid-core-mem-forget-vulnerable-1 0.1.0 (path+file:///scoutme/srcs/test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example)","manifest_path":"/scoutme/srcs/test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/Cargo.toml","target":{"kind":["cdylib"],"crate_types":["cdylib"],"name":"avoid-core-mem-forget-vulnerable-1","src_path":"/scoutme/srcs/test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/src/lib.rs","edition":"2021","doc":true,"doctest":false,"test":true},"profile":{"opt_level":"0","debuginfo":2,"debug_assertions":true,"overflow_checks":true,"test":false},"features":[],"filenames":["/tmp/dylint/target/nightly-2023-12-16-x86_64-unknown-linux-gnu/wasm32-unknown-unknown/debug/deps/libavoid_core_mem_forget_vulnerable_1-606d72168b714c54.rmeta"],"executable":null,"fresh":false}
 {"reason":"build-finished","success":true}"""
-
-
-@dataclass
-class SpanObject:
-    byte_end: int
-    byte_start: int
-    column_end: int
-    column_start: int
-    line_end: int
-    line_start: int
-    file_name: str
-
-    @classmethod
-    def FromJsonObj(cls, json_obj):
-        return cls(byte_end=json_obj['byte_end'], byte_start=json_obj['byte_start'],
-                   column_end=json_obj['column_end'], column_start=json_obj['column_start'],
-                   line_end=json_obj['line_end'], line_start=json_obj['line_start'],
-                   file_name=json_obj['file_name'])
-
-    def as_dict(self):
-        return {
-            'byte_end': self.byte_end,
-            'byte_start': self.byte_start,
-            'column_end': self.column_end,
-            'column_start': self.column_start,
-            'line_end': self.line_end,
-            'line_start': self.line_start,
-            'file_name': self.file_name
-        }
-
-@dataclass
-class SrcExtra:
-    filename: str
-    manifest: str
-
-    def as_dict(self):
-        return {'filename': self.filename, 'manifest': self.manifest}
-
-
-ScoutCodeCategories = {}
-
-
-@dataclass
-class ScoutVulnerability:
-    message: str
-    code: str
-    level: str
-    spans: List[SpanObject]
-    src_path: str
-    src_line: int
-    src_extra: SrcExtra
-
-    @property
-    def category(self):
-        return ScoutCodeCategories.get(self.code, 'unknown')
-
-    def asFinding(self)->Finding:
-        return Finding(
-            name=self.code,
-            desc=self.message,
-            category=self.category,
-            level=self.level,
-            filename=self.src_path,
-            lineno=self.src_line,
-            scanner=Scanner('scout'),
-            jsonextra=json.dumps({
-                'spans': [s.as_dict() for s in self.spans],
-                'extra': self.src_extra.as_dict()
-            })
-        )
-
-    @classmethod
-    def FromJsonObj(cls, json_obj):
-        if ((not json_obj['reason'] == 'compiler-message') or
-                (json_obj['message'] is None) or
-                (json_obj['message']['code'] is None)):
-            return None  # raise Exception("probably not a scout vuln.")
-        return cls(
-            message=json_obj['message']['message'],
-            code=json_obj['message']['code']['code'],
-            level=json_obj['message']['level'],
-            spans=[SpanObject.FromJsonObj(o) for o in json_obj['message']['spans']],
-            src_path=json_obj['target']['src_path'],
-            src_line=json_obj['message']['spans'][0]['line_start'],
-            src_extra=SrcExtra(
-                filename=json_obj['message']['spans'][0]['file_name'],
-                manifest=json_obj['manifest_path']))
 
 
 class TestScoutVulnFromJson(unittest.TestCase):

@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import time
+from collections import defaultdict
 
 from peewee import *
 
@@ -43,7 +44,7 @@ class BatchExec(BaseModel):
 
 
 class DockerExec(BaseModel):
-    batch = ForeignKeyField(BatchExec, null=True)
+    batch = ForeignKeyField(BatchExec, null=True,  backref='scans')
     timestamp = DateTimeField(default=datetime.datetime.now)
     repo = CharField(unique=False)
     commit = CharField(unique=False)
@@ -67,6 +68,13 @@ class DockerExec(BaseModel):
             'scanner': self.scanner,
             'errors': self.errors,}
 
+    @property
+    def report(self):
+        reps = [r for r in self.reports if not r.is_raw]
+        if len(reps) == 0:
+            return None
+        return reps[0]
+
 class Report(BaseModel):
     docker = ForeignKeyField(DockerExec, backref='reports')
     is_raw = BooleanField(default=True)
@@ -77,6 +85,30 @@ class Report(BaseModel):
     @classmethod
     def Create(cls, docker, is_raw, content):
         return Report.create(docker=docker, is_raw=is_raw, content=content)
+
+    @property
+    def data(self):
+        return json.loads(self.content)
+
+    @property
+    def findings(self):
+        return self.data['findings']
+
+    @property
+    def vulnstats(self):
+        d = self.data
+        found = defaultdict(int)
+        for vuln in d['findings']:
+            found[vuln['priority']]+=1
+        return dict(found)
+
+    @property
+    def vulnlist(self):
+        d = self.data
+        return '\r\n'.join([ '%s: %s'%(vuln['category'], vuln['name'])
+            for vuln in d['findings']
+        ])
+
 
 
 class Execution(BaseModel):

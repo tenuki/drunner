@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Create Batch{% endblock %}
+
+{% block content %}
+<table class="table">
+    <thead>
+    <tr>
+        <th><abbr title="Position">id</abbr></th>
+        <th>repo</th>
+        <th><abbr title="Played">commit</abbr></th>
+        <th>path</th>
+        <th>scanner</th>
+        <th>info</th>
+        <th>#</th>
+    </tr>
+    </thead>
+    <tbody>
+
+    {% for scan in batch.scans %}
+
+    <tr>
+            <th>
+            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.id}}</a>
+            </th>
+            <td>
+            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.repo}}</a>
+            </td>
+            <td>
+            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.commit}}</a>
+            </td>
+            <td>
+            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.path}}</a>
+            </td>
+            <td>
+            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.scanner}}</a>
+            </td>
+            <td>
+            <a href="{{url_for('report', id=scan.report.id)}}">
+                <abbr title="{{scan.report.vulnlist}}">{{scan.report.vulnstats}}</abbr>
+            </a>
+            </td>
+            <td>
+            <a href="{{url_for('report', id=scan.report.id)}}">
+                <abbr title="{{scan.errors}}">{{scan.errors!=None}}</abbr>
+            </a>
+            </td>
+    </tr>
+    {% endfor %}
+
+    </tbody>
+</table>
+
+
+{% endblock %}
