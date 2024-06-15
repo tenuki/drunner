@@ -1,17 +1,29 @@
 {% extends "base.html" %}
+{% import 'tags.html' as tags %}
 {% block title %}Create Batch{% endblock %}
 
+{% macro link_scan(scan) -%}
+    {% if scan.report==None %}
+        {{ caller(scan) }}
+    {% else %}
+        <a href="{{url_for('report', id=scan.report.id)}}">{{ caller(scan) }}</a>
+    {% endif %}
+{%- endmacro %}
+
+
 {% block content %}
-<table class="table">
+
+{{ tags.batchhead(batch) }}
+<table class="table is-striped is-hoverable is-fullwidth">
     <thead>
     <tr>
-        <th><abbr title="Position">id</abbr></th>
+        <th>id</th>
         <th>repo</th>
-        <th><abbr title="Played">commit</abbr></th>
+        <th>commit</th>
         <th>path</th>
         <th>scanner</th>
         <th>info</th>
-        <th>#</th>
+        <th>#err</th>
     </tr>
     </thead>
     <tbody>
@@ -19,30 +31,52 @@
     {% for scan in batch.scans %}
 
     <tr>
-            <th>
-            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.id}}</a>
-            </th>
+            {% for value in [scan.id, scan.repo, scan.commit, scan.path, scan.scanner] %}
             <td>
-            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.repo}}</a>
+                {% call(inner) link_scan(scan) %}
+                    {{value}}
+                {% endcall %}
+            </td>
+            {% endfor %}
+
+<!--            <th>-->
+<!--                {% call(inner) link_scan(scan) %}-->
+<!--                    {{inner.id}}-->
+<!--                {% endcall %}-->
+<!--            </th>-->
+<!--            <td>-->
+<!--                {% call(inner) link_scan(scan) %}-->
+<!--                    {{inner.repo}}-->
+<!--                {% endcall %}-->
+<!--            </td>-->
+<!--            <td>-->
+<!--                {% call(inner) link_scan(scan) %}-->
+<!--                    {{inner.commit}}-->
+<!--                {% endcall %}-->
+<!--            </td>-->
+<!--            <td>-->
+<!--                {% call(inner) link_scan(scan) %}-->
+<!--                    {{inner.path}}-->
+<!--                {% endcall %}-->
+<!--            </td>-->
+<!--            <td>-->
+<!--                {% call(inner) link_scan(scan) %}-->
+<!--                    {{inner.scanner}}-->
+<!--                {% endcall %}-->
+<!--            </td>-->
+            <td>
+                {% call(inner) link_scan(scan) %}
+                <abbr title="{{scan.report.vulnlist}}">
+                    {% if inner.report!=None %}
+                    {{ tags.vulntag(inner.scanner, inner.report.vulnstats) }}
+                    {% endif %}
+                </abbr>
+                {% endcall %}
             </td>
             <td>
-            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.commit}}</a>
-            </td>
-            <td>
-            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.path}}</a>
-            </td>
-            <td>
-            <a href="{{url_for('report', id=scan.report.id)}}">{{scan.scanner}}</a>
-            </td>
-            <td>
-            <a href="{{url_for('report', id=scan.report.id)}}">
-                <abbr title="{{scan.report.vulnlist}}">{{scan.report.vulnstats}}</abbr>
-            </a>
-            </td>
-            <td>
-            <a href="{{url_for('report', id=scan.report.id)}}">
-                <abbr title="{{scan.errors}}">{{scan.errors!=None}}</abbr>
-            </a>
+                {% call(inner) link_scan(scan) %}
+                <abbr title="{{inner.errors}}">{{'Some' if inner.errors!=None else '-'}}</abbr>
+                {% endcall %}
             </td>
     </tr>
     {% endfor %}

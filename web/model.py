@@ -75,6 +75,32 @@ class DockerExec(BaseModel):
             return None
         return reps[0]
 
+class PrioritySum:
+    # Keys = ('High', 'Medium', 'Low', 'Enhancement')
+    SKeys = {'High', 'Medium', 'Low', 'Enhancement'}
+    def __init__(self, **kwargs):
+        self.d = {k: kwargs.get(k, 0) for k in PrioritySum.SKeys}
+    def __contains__(self, key):
+        return key in self.SKeys
+    def __getitem__(self, key):
+        if not key in self.SKeys:
+            raise KeyError(key)
+        return self.d[key]
+    def __setitem__(self, key, value):
+        if not key in self.SKeys:
+            raise KeyError(key)
+        self.d[key] = value
+    def __delitem__(self, key):
+        if not key in self.SKeys:
+            raise KeyError(key)
+        self.d[key] = 0
+    def get(self, key, default=None):
+        if not key in self.SKeys:
+            raise KeyError(key)
+        return self.d.get(key, default)
+    def sum(self):
+        return self['High'] + (self['Medium']/2) + (self['Low']/4) + (self['Enhancement']/10)
+
 class Report(BaseModel):
     docker = ForeignKeyField(DockerExec, backref='reports')
     is_raw = BooleanField(default=True)
@@ -100,7 +126,7 @@ class Report(BaseModel):
         found = defaultdict(int)
         for vuln in d['findings']:
             found[vuln['priority']]+=1
-        return dict(found)
+        return PrioritySum(**found)
 
     @property
     def vulnlist(self):
@@ -108,7 +134,6 @@ class Report(BaseModel):
         return '\r\n'.join([ '%s: %s'%(vuln['category'], vuln['name'])
             for vuln in d['findings']
         ])
-
 
 
 class Execution(BaseModel):
@@ -149,6 +174,7 @@ class OutputLine(BaseModel):
 
 
 def init():
+    db = SqliteDatabase(DB_FILE)
     # Connect to our database.
     db.connect()
     # Create the tables.
@@ -157,3 +183,9 @@ def init():
 
 if __name__ == '__main__':
     init()
+else:
+    def invalid(fname):
+        file_stats = os.stat(fname)
+        return file_stats.st_size==0
+    if (not os.path.exists(DB_FILE)) or invalid(DB_FILE):
+        init()

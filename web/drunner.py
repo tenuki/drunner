@@ -11,7 +11,7 @@ import worker
 import model
 from results import ResultsReport, Finding, Priority
 
-from worker.scanners.scout import ScoutRunner
+# from scanners.scout import ScoutRunner
 
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 redis_broker = RedisBroker(host=REDIS_HOST)
@@ -42,6 +42,7 @@ class CheckoutFailed(RunnerException):
 
 class ScannerRunner(object):
     OUTPUT_DIR_NAME = 'out'
+    Scanners = {}
 
     @classmethod
     def Create(cls, repo: str, commit: str, path: str = '.', scanner: str='scout'):
@@ -49,10 +50,15 @@ class ScannerRunner(object):
         return cls.Get(m)
 
     @classmethod
+    def Register(cls, klass, name):
+        cls.Scanners[name] = klass
+
+    @classmethod
     def Get(cls, m: model.DockerExec):
-        if m.scanner.lower() == 'scout':
-            return ScoutRunner(m)
-        elif 'test' in m.scanner.lower():
+        klass = cls.Scanners.get(m.scanner)
+        if not klass is None:
+            return klass(m)
+        if 'test' in m.scanner.lower():
             return TestScanRunner(m)
         raise RuntimeError(f'Unknown Docker scanner: {m.scanner}.')
 
@@ -188,8 +194,13 @@ def test_add_site():
     add_keys_for_site(e.id)
 
 
+from scanners.scout import ScoutRunner
+ScannerRunner.Register(ScoutRunner, 'scout')
+
 if __name__ == '__main__':
-    test_add_site()
+    from scanners.scout import ScoutRunner
+    #test_add_site()
+    pass
     # dr = DockerRunner.Create('git@github.com:CoinFabrik/scout-soroban-examples.git', 'main', 'vesting/', scanner='scout')
     # dr = ScannerRunner.Create('git@github.com:tenuki/no-code.git', 'main', '.', scanner='test')
     # dr.run()

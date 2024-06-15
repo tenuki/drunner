@@ -4,21 +4,22 @@ import sys
 from dataclasses import dataclass
 from typing import List
 
-from worker.drunner import ScannerRunner
-from worker.results import ResultsReport, Finding, Priority, Scanner, SpanObject, SrcExtra
+from drunner import ScannerRunner
+from results import ResultsReport, Finding, Priority, Scanner, SpanObject, SrcExtra
 
 
 ScoutCodeCategories = {}
 
 
 class ScoutRunner(ScannerRunner):
-    IMAGE = 'coinfabrik/scout-image:latest'
+    IMAGE = 'coinfabrik/scout:latest'
     CONTAINER_RAW_REPORT_NAME = os.path.join(ScannerRunner.OUTPUT_DIR_NAME, 'report.json')
 
     def run_image(self):
         cmd = (f'docker run -i --rm -e CARGO_TARGET_DIR=/tmp '
                # f'-e RUST_BACKTRACE=full '
                f'-e INPUT_TARGET=/scoutme/srcs/{self.path} '
+               f'-e RUST_BACKTRACE=full '
                f'-e INPUT_SCOUT_ARGS=" --output-format json --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}" '
                f'-v {self.tmpdir}:/scoutme {self.IMAGE}')
         self.exec([cmd])
@@ -44,6 +45,7 @@ class ScoutRunner(ScannerRunner):
                 print(f"Invalid line in output: '{line}'. ignoring..", file=sys.stderr)
         return report
 
+ScannerRunner.Register(ScoutRunner, 'scout')
 
 @dataclass
 class ScoutVulnerability:

@@ -1,0 +1,112 @@
+{% macro vulntag(scanner, vulnsdict) -%}
+<div class="control">
+    <div class="tags has-addons">
+        <span class="tag is-hoverable is-link">{{vulnsdict.sum()}}</span>
+        <span class="tag is-hoverable is-dark">{{scanner}}</span>
+        <span class="tag is-hoverable is-info">{{vulnsdict['Enhancement']}}</span>
+        <span class="tag is-hoverable is-success">{{vulnsdict['Low']}}</span>
+        <span class="tag is-hoverable is-warning">{{vulnsdict['Medium']}}</span>
+        <span class="tag is-hoverable is-danger">{{vulnsdict['High']}}</span>
+    </div>
+</div>
+{%- endmacro %}
+
+
+{% macro batchhead(batch=None,editable=False) -%}
+{% if not editable %}
+<fieldset disabled>
+{% endif %}
+<div class="field is-horizontal">
+    <div class="field-label is-normal">
+        <label class="label">Name</label>
+    </div>
+    <div class="field-body">
+        <div class="field">
+            <div class="control">
+                <input class="input" id="batch" value="{{'' if None==batch else batch.comments}}"
+                       name="batch" placeholder="Name for this batch" type="text">
+            </div>
+        </div>
+        <div class="field-label is-normal">
+            <label class="label">Date</label>
+        </div>
+        <div class="field">
+            <div class="control">
+                <input class="input" id="batchts" value="{{'' if None==batch else batch.timestamp}}"
+                       name="batch" placeholder="Name for this batch" type="text">
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="field is-horizontal">
+    <div class="field-label is-normal">
+        <label class="label">From</label>
+    </div>
+    <div class="field-body">
+        <div class="field">
+            <p class="control is-expanded has-icons-left">
+                <input class="input" id="name" placeholder="Name"
+                       name="from" type="text" value="{{'' if None==batch else batch.author}}">
+                <span class="icon is-small is-left"><i class="fas fa-user"></i></span>
+            </p>
+        </div>
+        <div class="field">
+            <p class="control is-expanded has-icons-left has-icons-right">
+                <input class="input" name="email" placeholder="Email" type="email"
+                       value="{{'' if None==batch else batch.email}}">
+                <span class="icon is-small is-left"><i class="fas fa-envelope"></i></span>
+                <span class="icon is-small is-right"><i class="fas fa-check"></i></span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="field is-horizontal">
+    <div class="field-label is-normal">
+        <label class="label">Comments</label>
+    </div>
+    <div class="field-body">
+        <div class="field">
+            <div class="control">
+                <textarea class="textarea" name="comments" placeholder="{{'' if None==batch else batch.comments}}"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--<div class="field is-horizontal">-->
+<!--    <div class="field-label is-normal">-->
+<!--        <label class="label">Definitions</label>-->
+<!--    </div>-->
+<!--    <div class="field-body">-->
+<!--        <div class="field">-->
+<!--            <div class="control">-->
+<!--                    <textarea class="textarea" id="tasks" name="tasks"-->
+<!--                              placeholder="Explain how we can help you"></textarea>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+
+<!--<div class="field is-horizontal">-->
+<!--    <div class="field-label">-->
+<!--        &lt;!&ndash; Left empty for spacing &ndash;&gt;-->
+<!--    </div>-->
+<!--    <div class="field-body">-->
+<!--        <div class="field">-->
+<!--            <div class="control">-->
+<!--                <button class="button is-primary">-->
+<!--                    Send message-->
+<!--                </button>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+
+{% if not editable %}
+</fieldset>
+{% endif %}
+
+{%- endmacro %}
