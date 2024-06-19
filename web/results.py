@@ -27,11 +27,12 @@ class Finding:
             'name': self.name,
             'desc': self.desc,
             'category': self.category,
-            'level': self.level.name,
+            'level': self.level,
+            # 'level': self.level.name,
             'filename': self.filename,
             'lineno': self.lineno,
             'jsonextra': self.jsonextra,
-            'scanner': self.scanner if self.scanner is not None else '',
+            'scanner': self.scanner.name if self.scanner is not None else '',
         }
 
 @dataclass

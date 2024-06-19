@@ -104,9 +104,45 @@
 <!--        </div>-->
 <!--    </div>-->
 <!--</div>-->
-
 {% if not editable %}
 </fieldset>
 {% endif %}
+{%- endmacro %}
+
+
+{% macro generic_report(report) -%}
+{% if report==None %}
+No - report
+{% else %}
+    <h1>Report: {{ report.data['name'] }} / {{ report.data['date'] }} </h1>
+    {{ report.data['issuer'] }} <br/>
+    {{ report.data['scanners'] }}<br/>
+    {{ report.data['composite'] }}<br/>
+    <br/>
+
+    <table class="table is-striped is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th>Scanner</th>
+          <th>Category</th>
+          <th>Name</th>
+          <th>Level</th>
+          <th>Filename</th>
+        </tr>
+      </thead>
+      <tbody>
+    {% for finding in report.findings %}
+        <tr>
+          <th>{{finding.scanner}}</th>
+          <td>{{finding.category}}</td>
+          <td>{{finding.name}}</td>
+          <td>{{finding.level}}</td>
+          <td>{{finding.filename}}:{{finding.lineno}}</td>
+        </tr>
+    {% endfor %}
+      </tbody>
+    </table>
+{% endif %}
 
 {%- endmacro %}
+

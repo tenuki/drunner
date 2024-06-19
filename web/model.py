@@ -16,11 +16,11 @@ if os.environ.get('DBLOG', 'false').lower() == 'true':
 
 DB_FILE = os.environ.get("DB", os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 'drunner.sqlite.db'))
-idx=0
-while not os.path.exists(DB_FILE):
-    print(idx)
-    idx+=1
-    time.sleep(1)
+# idx=0
+# while not os.path.exists(DB_FILE):
+#     print(idx)
+#     idx+=1
+#     time.sleep(1)
 db = SqliteDatabase(DB_FILE)
 
 
@@ -43,13 +43,15 @@ class BatchExec(BaseModel):
         return f'<{self.id}: {self.name} / {self.author} / {self.email} / {self.comments[:20]}>'
 
 
-class DockerExec(BaseModel):
+class ScannerExec(BaseModel):
     batch = ForeignKeyField(BatchExec, null=True,  backref='scans')
     timestamp = DateTimeField(default=datetime.datetime.now)
     repo = CharField(unique=False)
     commit = CharField(unique=False)
+    rev_hash = CharField(unique=False, null=True)
     path = CharField(unique=False)
     scanner = CharField(unique=False, default="Scout")
+    scanner_version = CharField(unique=False, null=True)
     errors = TextField(null=True)
 
     def __str__(self):
@@ -75,8 +77,8 @@ class DockerExec(BaseModel):
             return None
         return reps[0]
 
+
 class PrioritySum:
-    # Keys = ('High', 'Medium', 'Low', 'Enhancement')
     SKeys = {'High', 'Medium', 'Low', 'Enhancement'}
     def __init__(self, **kwargs):
         self.d = {k: kwargs.get(k, 0) for k in PrioritySum.SKeys}
@@ -101,8 +103,9 @@ class PrioritySum:
     def sum(self):
         return self['High'] + (self['Medium']/2) + (self['Low']/4) + (self['Enhancement']/10)
 
+
 class Report(BaseModel):
-    docker = ForeignKeyField(DockerExec, backref='reports')
+    docker = ForeignKeyField(ScannerExec, backref='reports')
     is_raw = BooleanField(default=True)
     content = TextField(null=False)
     def __str__(self):
@@ -137,7 +140,7 @@ class Report(BaseModel):
 
 
 class Execution(BaseModel):
-    docker = ForeignKeyField(DockerExec, backref='execs', null=True)
+    scan = ForeignKeyField(ScannerExec, backref='execs', null=True)
     cmdargs = CharField(unique=False, null=True)
     wd = CharField(unique=False, null=True)
     env = CharField(unique=False, null=True)
@@ -149,9 +152,9 @@ class Execution(BaseModel):
         return f'<{self.id}: {self.cmdargs[:30]}  ({self.ret})>'
 
     @classmethod
-    def Create(cls, cmdargs=None, wd=None, env=None, docker=None):
+    def Create(cls, cmdargs=None, wd=None, env=None, scan=None):
         return Execution.create(
-            docker=docker,
+            scan=scan,
             cmdargs=json.dumps(cmdargs),
             wd=wd,
             env=json.dumps(env))
@@ -160,6 +163,10 @@ class Execution(BaseModel):
         end = datetime.datetime.now()
         self.duration = (end - self.timestamp).total_seconds()
         self.ret = retcode
+
+    @property
+    def output(self):
+        return '\n'.join(ol.line for ol in self.output_line)
 
 
 class OutputLine(BaseModel):
@@ -178,7 +185,7 @@ def init():
     # Connect to our database.
     db.connect()
     # Create the tables.
-    db.create_tables([BatchExec, DockerExec, Report,  Execution, OutputLine])
+    db.create_tables([BatchExec, ScannerExec, Report, Execution, OutputLine])
 
 
 if __name__ == '__main__':

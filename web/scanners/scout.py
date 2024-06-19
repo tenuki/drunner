@@ -15,9 +15,15 @@ class ScoutRunner(ScannerRunner):
     IMAGE = 'coinfabrik/scout:latest'
     CONTAINER_RAW_REPORT_NAME = os.path.join(ScannerRunner.OUTPUT_DIR_NAME, 'report.json')
 
+    def _get_version(self):
+        ex = self.exec([f'docker run -i --rm -e INPUT_SCOUT_ARGS=--version {self.IMAGE}'])
+        ex.scan.scanner_version = self.version = ex.output
+        ex.scan.save()
+
     def run_image(self):
+        self._get_version()
+
         cmd = (f'docker run -i --rm -e CARGO_TARGET_DIR=/tmp '
-               # f'-e RUST_BACKTRACE=full '
                f'-e INPUT_TARGET=/scoutme/srcs/{self.path} '
                f'-e RUST_BACKTRACE=full '
                f'-e INPUT_SCOUT_ARGS=" --output-format json --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}" '

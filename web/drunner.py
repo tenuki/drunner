@@ -46,7 +46,7 @@ class ScannerRunner(object):
 
     @classmethod
     def Create(cls, repo: str, commit: str, path: str = '.', scanner: str='scout'):
-        m = model.DockerExec.create(repo=repo, commit=commit, path=path, scanner=scanner)
+        m = model.ScannerExec.create(repo=repo, commit=commit, path=path, scanner=scanner)
         return cls.Get(m)
 
     @classmethod
@@ -54,7 +54,7 @@ class ScannerRunner(object):
         cls.Scanners[name] = klass
 
     @classmethod
-    def Get(cls, m: model.DockerExec):
+    def Get(cls, m: model.ScannerExec):
         klass = cls.Scanners.get(m.scanner)
         if not klass is None:
             return klass(m)
@@ -62,7 +62,7 @@ class ScannerRunner(object):
             return TestScanRunner(m)
         raise RuntimeError(f'Unknown Docker scanner: {m.scanner}.')
 
-    def __init__(self, m: model.DockerExec):
+    def __init__(self, m: model.ScannerExec):
         self.path = m.path
         self.commit = m.commit
         self.repo = m.repo
@@ -92,7 +92,7 @@ class ScannerRunner(object):
     def output_fname(self):
         return os.path.join(self.tmpdir, self.OUTPUT_DIR_NAME, 'report.json')
 
-    def exec(self, cmdargs, wd=None, env=None):
+    def exec(self, cmdargs, wd=None, env=None) -> model.Execution:
         if wd is None:
             wd = self.tmpdir
         else:
@@ -108,13 +108,18 @@ class ScannerRunner(object):
 
         - tmpdir is expected to be mounted somewhere in the container
         """
-        ret = self.exec([f'git clone {self.repo} srcs'])
-        if ret!=0:
-            raise CloneFailed('git clone failed')
-        ret2 = self.exec([f'git checkout {self.commit}'], 'srcs')
-        if ret2!=0:
-            raise CheckoutFailed('git checkout failed')
         os.mkdir(os.path.join(self.tmpdir, self.OUTPUT_DIR_NAME))
+        ex1 = self.exec([f'git clone {self.repo} srcs'])
+        if ex1.ret!=0:
+            raise CloneFailed('git clone failed')
+        ex2 = self.exec([f'git checkout {self.commit}'], 'srcs')
+        if ex2.ret!=0:
+            raise CheckoutFailed('git checkout failed')
+        ex3 = self.exec([f'git rev-parse HEAD'], 'srcs')
+        if ex3.ret!=0:
+            raise CheckoutFailed('git rev-parse HEAD failed')
+        ex3.scan.rev_hash = ex3.output
+        ex3.scan.save()
 
     def fetch_raw_output(self):
         with open(os.path.join(self.tmpdir, self.CONTAINER_RAW_REPORT_NAME), 'rb') as f:
@@ -151,7 +156,7 @@ class TestScanRunner(ScannerRunner):
                f'-e INPUT_TARGET=/scanme/srcs/{self.path} '
                f'-e OUTPUT_NAME=/scanme/{self.CONTAINER_RAW_REPORT_NAME} '
                f'-v {self.tmpdir}:/scanme {self.IMAGE}')
-        self.exec([cmd])
+        return self.exec([cmd])
 
     def process_report(self, raw_report):
         report = ResultsReport(
@@ -160,19 +165,19 @@ class TestScanRunner(ScannerRunner):
             composite=False,
             scanners=[self.m.scanner])
         report.addFinding(Finding(name="vuln1 at x", category='vuln1',
-                            priority=Priority.Medium, scanner=self.m.scanner))
+                            level=Priority.Medium, scanner=self.m.scanner))
         report.addFinding(Finding(name="vuln9 at y", category='vuln9',
-                            priority=Priority.Low, scanner=self.m.scanner))
+                            level=Priority.Low, scanner=self.m.scanner))
         report.addFinding(Finding(name="vuln5 at z", category='vuln5',
-                            priority=Priority.High, scanner=self.m.scanner))
+                            level=Priority.High, scanner=self.m.scanner))
         report.addFinding(Finding(name="vuln9 at t", category='vuln9',
-                            priority=Priority.Low, scanner=self.m.scanner))
+                            level=Priority.Low, scanner=self.m.scanner))
         return report
 
 
 @dramatiq.actor(time_limit=1200000)
 def execute_task(task_id):
-    a_task = model.DockerExec.get_by_id(task_id)
+    a_task = model.ScannerExec.get_by_id(task_id)
     runner = ScannerRunner.Get(a_task)
     runner.run()
 

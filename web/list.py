@@ -1,10 +1,10 @@
-from model import BatchExec, DockerExec, Execution
+from model import BatchExec, ScannerExec, Execution
 
 
 def list():
     for b in BatchExec.select():
         print(repr(b))
-    for scanner in DockerExec.select():
+    for scanner in ScannerExec.select():
         print(repr(scanner))
     for exe in Execution.select():
         print(repr(exe))

@@ -5,7 +5,7 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from flask import Flask, render_template, request, url_for, redirect
 
-from model import BatchExec, DockerExec, Execution, Report
+from model import BatchExec, ScannerExec, Execution, Report
 
 app = Flask(__name__)
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
@@ -21,7 +21,7 @@ def render(template, **kwargs):
            'short_repo':lambda x: '../'+x.rsplit('/', 1)[1].replace('.git', ''),
            'short_date':lambda d: str(d).split('.')[0].split('-', 1)[1].rsplit(':', 1)[0],
            }
-    for f in [len, url_for]:
+    for f in [list, len, url_for, repr, type, json]:
         new[f.__name__] = f
     # print ("---> ", list(new.keys()))
     new.update(kwargs)
@@ -54,8 +54,7 @@ def report(id: int):  # put application's code here
 
 @app.route('/scan-exec/<id>')
 def scan_exec(id: int):  # put application's code here
-    exec = DockerExec().get_by_id(id)
-
+    scan = ScannerExec().get_by_id(id)
     exec_fields = {}
     to_str = lambda x: str(x) if type(x)!=type('') else x
     for k in ["id",
@@ -64,13 +63,13 @@ def scan_exec(id: int):  # put application's code here
                 'commit',
                 'path',
                 'scanner']:
-        exec_fields[k] = to_str(getattr(exec, k))
+        exec_fields[k] = to_str(getattr(scan, k))
 
     big_fields = {}
     for k in ['errors']:
-        big_fields[k] = to_str(getattr(exec, k))
+        big_fields[k] = to_str(getattr(scan, k))
 
-    reports = list(exec.reports)
+    reports = list(scan.reports)
     if len(reports)>=2:
         gen = [r for r in reports if not r.is_raw ][0]
         print(gen)
@@ -82,6 +81,7 @@ def scan_exec(id: int):  # put application's code here
         big_fields['raw'] = raw.content
 
     return render("scan.html",
+                  scan=scan,
                   exec_fields=exec_fields,
                   big_fields=big_fields)
 
@@ -127,7 +127,7 @@ def create():
                 path = '.'
             if commit=="":
                 commit = 'main'
-            de = DockerExec.create(batch=b, commit=commit, repo=repo, path=path, scanner=detector)
+            de = ScannerExec.create(batch=b, commit=commit, repo=repo, path=path, scanner=detector)
             des.append(de)
         execute_batch.send(b.id, [de.id for de in des])
     return render('create.html')
@@ -139,9 +139,9 @@ def scans():
 
 
 def get_scans():
-    return [x.as_dict() for x in DockerExec.select()
-                .where(DockerExec.batch != None)
-                .order_by(DockerExec.timestamp.desc())]
+    return [x.as_dict() for x in ScannerExec.select()
+                .where(ScannerExec.batch != None)
+                .order_by(ScannerExec.timestamp.desc())]
 
 
 def get_batchs():
@@ -155,6 +155,7 @@ def add_keys_for_site(e_id: int):
 
 @dramatiq.actor(time_limit=1200000)
 def execute_batch(batch, tasks=()):
+    print("*****************EXECUTE BATCH ************************")
     pass
 
 
@@ -166,7 +167,7 @@ def testme():
     line = 'git@github.com:tenuki/no-code.git,main,.,test'
     line = 'git@github.com:CoinFabrik/scout-soroban-examples.git,main,vesting/,scout'
     repo, commit, path, detector = line.split(",")
-    de = DockerExec.create(batch=b, commit=commit, repo=repo, path=path, scanner=detector)
+    de = ScannerExec.create(batch=b, commit=commit, repo=repo, path=path, scanner=detector)
     des=[de]
     # de.save()
     execute_batch.send(b.id, [de.id for de in des])

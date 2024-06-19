@@ -9,7 +9,7 @@ import threading
 from contextlib import contextmanager
 from subprocess import Popen, PIPE
 
-from model import Execution, OutputLine, db, DockerExec
+from model import Execution, OutputLine, db, ScannerExec
 
 
 BSIZE = 100
@@ -77,7 +77,7 @@ def launch_thread(*args):
         thread.join()
 
 
-def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True):
+def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True) -> Execution:
     ex.timestamp = datetime.datetime.now()
     if not (env is None):
         base = os.environ.copy()
@@ -92,32 +92,32 @@ def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True):
         with launch_thread(ex, child_stdout, True, q):
             with launch_thread(ex, child_stderr, False, q):
                 p.wait()
-                ex.set_end(p.returncode)
     except Exception as e:
         print(f"Error while running: {e}", file=sys.stderr)
     finally:
         q.put(None)
+        ex.set_end(p.returncode)
         try:
             ex.save()
         except Exception as err:
             print(f"Failed to save: {err}", file=sys.stderr)
         thread.join()
-        return p.returncode
+    return ex
 
 
 # @dramatiq.actor
-def exec(cmdargs=None, wd=None, env=None, de: DockerExec=None, e:Execution=None):
+def exec(cmdargs=None, wd=None, env=None, de: ScannerExec=None, e:Execution=None) -> Execution:
     if e is None and cmdargs is None:
         raise Exception("Either cmdargs or cmdargs must not be None")
     if e is None:
-        e = Execution.Create(cmdargs, wd, env, docker=de)
+        e = Execution.Create(cmdargs, wd, env, scan=de)
     else:
         e.wd = wd
         cmdargs = json.loads(e.cmdargs)
         e.save()
-    ret = _exec(e, cmdargs=cmdargs, wd=wd, env=env)
+    e = _exec(e, cmdargs=cmdargs, wd=wd, env=env)
     e.save()
-    return ret
+    return Execution.get_by_id(e.id)
 
 
 def testme(argscmd):

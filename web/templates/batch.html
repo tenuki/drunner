@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% import 'tags.html' as tags %}
-{% block title %}Create Batch{% endblock %}
+{% block title %}Batch Info{% endblock %}
 
 {% macro link_scan(scan) -%}
-    {% if scan.report==None %}
+    <a href="{{url_for('scan_exec', id=scan.id)}}">{{ caller(scan) }}</a>
+    {# if scan.report==None %}
         {{ caller(scan) }}
     {% else %}
         <a href="{{url_for('report', id=scan.report.id)}}">{{ caller(scan) }}</a>
-    {% endif %}
+    {% endif #}
 {%- endmacro %}
 
 
