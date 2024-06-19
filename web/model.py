@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from peewee import *
 
+
 ## debug queries..
 logger = logging.getLogger('peewee')
 if os.environ.get('DBLOG', 'false').lower() == 'true':
@@ -159,14 +160,25 @@ class Execution(BaseModel):
             wd=wd,
             env=json.dumps(env))
 
+    @property
+    def output(self):
+        return '\n'.join(ol.line for ol in self.output_line)
+
     def set_end(self, retcode):
         end = datetime.datetime.now()
         self.duration = (end - self.timestamp).total_seconds()
         self.ret = retcode
 
-    @property
-    def output(self):
-        return '\n'.join(ol.line for ol in self.output_line)
+    def get_output_fname(self):
+        from helperfuncs import short_date
+        cmd = ' '.join(json.loads(self.cmdargs))
+        for c in ' :/"\'':
+            cmd = cmd.replace(c, '_')
+        date = short_date(self.timestamp)
+        return f'{date}-id_{id}-{cmd}.txt'
+
+    def get_output_info(self):
+        return self.get_output_fname(), 'text/plain'
 
 
 class OutputLine(BaseModel):
@@ -196,3 +208,14 @@ else:
         return file_stats.st_size==0
     if (not os.path.exists(DB_FILE)) or invalid(DB_FILE):
         init()
+
+
+def get_scans():
+    return [x.as_dict() for x in ScannerExec.select()
+                .where(ScannerExec.batch != None)
+                .order_by(ScannerExec.timestamp.desc())]
+
+
+def get_batchs():
+    return [x for x in
+            BatchExec.select().order_by(BatchExec.timestamp.desc())]

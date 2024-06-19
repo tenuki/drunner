@@ -3,29 +3,16 @@ import os
 
 import dramatiq
 from dramatiq.brokers.redis import RedisBroker
-from flask import Flask, render_template, request, url_for, redirect
+from flask import Flask, request, url_for, redirect, Response
 
-from model import BatchExec, ScannerExec, Execution, Report
+from model import BatchExec, ScannerExec, Execution, Report, get_scans
+from helperfuncs import render, to_str
+
 
 app = Flask(__name__)
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 redis_broker = RedisBroker(host=REDIS_HOST)
 dramatiq.set_broker(redis_broker)
-
-
-def render(template, **kwargs):
-    new = {'scans': get_scans(),
-           'lines': lambda x: len(x.splitlines()),
-           'batchs': get_batchs(),
-           'None': None,
-           'short_repo':lambda x: '../'+x.rsplit('/', 1)[1].replace('.git', ''),
-           'short_date':lambda d: str(d).split('.')[0].split('-', 1)[1].rsplit(':', 1)[0],
-           }
-    for f in [list, len, url_for, repr, type, json]:
-        new[f.__name__] = f
-    # print ("---> ", list(new.keys()))
-    new.update(kwargs)
-    return render_template(template, **new)
 
 
 @app.route('/')
@@ -52,11 +39,34 @@ def report(id: int):  # put application's code here
     report = Report().get_by_id(id)
     return render('report.html', report=report)
 
+@app.route('/report/<id>/download')
+def report_download(id: int):  # put application's code here
+    report = Report().get_by_id(id)
+    return Response(
+        report.content,
+        mimetype='text/plain',
+        headers={'Content-disposition': f'attachment; filename=report-{id}'})
+
+@app.route('/report/<id>/name')
+def report_name(id: int):  # put application's code here
+    return f'report-{id}'
+
+@app.route('/exec/<id>/output')
+def get_exec_output(id: int):  # put application's code here
+    exec = Execution().get_by_id(id)
+    if not exec:
+        return 'Not found', 404
+    fname = exec.get_output_fname()
+    return Response(
+        exec.output,
+        mimetype='text/plain',
+        headers={'Content-disposition': f'attachment; filename={fname}'})
+
+
 @app.route('/scan-exec/<id>')
 def scan_exec(id: int):  # put application's code here
     scan = ScannerExec().get_by_id(id)
     exec_fields = {}
-    to_str = lambda x: str(x) if type(x)!=type('') else x
     for k in ["id",
                 'timestamp',
                 'repo',
@@ -138,24 +148,12 @@ def scans():
     return get_scans()
 
 
-def get_scans():
-    return [x.as_dict() for x in ScannerExec.select()
-                .where(ScannerExec.batch != None)
-                .order_by(ScannerExec.timestamp.desc())]
-
-
-def get_batchs():
-    return [x for x in
-            BatchExec.select().order_by(BatchExec.timestamp.desc())]
-
-
 @dramatiq.actor
 def add_keys_for_site(e_id: int):
     pass
 
 @dramatiq.actor(time_limit=1200000)
 def execute_batch(batch, tasks=()):
-    print("*****************EXECUTE BATCH ************************")
     pass
 
 

@@ -5,87 +5,84 @@
 
 
 {% block content %}
-    <h1>Scan execution</h1>
+<h1>Scan execution</h1>
 
-<fieldset disabled>
+<!--<fieldset disabled>-->
 
 {% for field_name, field_value in exec_fields.items() %}
 <div class="field is-horizontal">
-  <div class="field-label is-normal">
-    <label class="label">{{ field_name}}</label>
-  </div>
-  <div class="field-body">
-    <div class="field">
-      <div class="control">
-        <input class="input is-danger" type="text" value="{{ field_value}}"
-               name="batch" id="batch" placeholder="e.g. The friendly comparison">
-      </div>
-{#      <p class="help is-danger">This field is required</p>#}
+    <div class="field-label is-normal">
+        <label class="label">{{ field_name}}</label>
     </div>
-  </div>
+    <div class="field-body">
+        <div class="field">
+            <div class="control">
+                <input class="input is-danger" id="batch" name="batch"
+                       placeholder="e.g. The friendly comparison" type="text" value="{{ field_value}}">
+            </div>
+            {# <p class="help is-danger">This field is required</p>#}
+        </div>
+    </div>
 </div>
 {% endfor %}
 
 <div class="box">
-  {{ tags.generic_report(scan.report) }}
+    {{ tags.generic_report(scan.report) }}
 </div>
 
-{% for exec in scan.execs %}
+{% for rndId, exec in enumwid(scan.execs) %}
 <div class="box">
 
-<div class="field is-horizontal">
-  <div class="field-label is-normal">
-    <label class="label">Command</label>
-  </div>
-  <div class="field-body">
-    <div class="field">
-      <div class="control">
-        <input class="input" type="text" value="{{ ' '.join(json.loads(exec.cmdargs)) }}">
-      </div>
-<!--      <p class="help">-->
-<!--        This field is required-->
-<!--      </p>-->
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label">Command</label>
+        </div>
+        <div class="field-body">
+            <div class="field">
+                <div class="control">
+                    <input class="input" type="text" value="{{ ' '.join(json.loads(exec.cmdargs)) }}">
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<div class="field is-horizontal">
-  <div class="field-label is-normal">
-    <label class="label">Output</label>
-  </div>
-  <div class="field-body">
-    <div class="field">
-      <div class="control">
-        <textarea class="textarea is-family-code" rows="{{len(list(exec.output_line))+1}}">{%- for line in exec.output_line -%}
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label">Output</label>
+            {{ tags.form_ta_buttons(rndId) }}
+        </div>
+        <div class="field-body">
+            <div class="field">
+                <div class="control">
+        <textarea id="{{ rndId }}"
+                  url="{{url_for('get_exec_output', id=exec.id)}}"
+                  fname="{{exec.get_output_fname()}}"
+                  class="textarea is-family-code"
+                  rows="{{len(list(exec.output_line))+1}}"
+        >{%- for line in exec.output_line -%}
 {{ line.line+"\r\n" }}
 {%- endfor -%}</textarea>
-      </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
 </div>
 {% endfor %}
 
 
-<hr/>
-{% for field_name, field_value in big_fields.items() %}
-<div class="field is-horizontal">
-  <div class="field-label is-normal">
-    <label class="label">{{ field_name }}</label>
-  </div>
-  <div class="field-body">
-    <div class="field">
-      <div class="control">
-        <textarea rows="{{ 2+lines(field_value) }}" class="textarea" id="tasks" name="tasks" placeholder="Explain how we can help you">
-{{ field_value }}
-        </textarea>
-      </div>
-    </div>
-  </div>
-</div>
-{% endfor %}
+<div class="box">
+{{ tags.form_ta('Error', scan.errors, funcs) }}
 
-</fieldset>
+{% for report in scan.reports %}
+{% if report.is_raw %}
+{{ tags.form_ta_wButtons('Raw report', report.content, funcs,
+    url_for('report_download', id=report.id)) }}
+{% endif %}
+{% endfor %}
+</div>
+
+
+<!--</fieldset>-->
 
 {% endblock %}

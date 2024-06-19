@@ -8,8 +8,37 @@
           name="viewport">
     <title>Scanner runner</title>
     <link href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css" rel="stylesheet">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
     {% block head %}
     {% endblock %}
+
+    <script>
+        function copy(id) {
+         const copyText = document.getElementById(id);
+          copyText.select();
+          copyText.setSelectionRange(0, 99999);
+          navigator.clipboard.writeText(copyText.value);
+          alert("Copied the text: " + copyText.value);
+        }
+        function download(id) {
+         const element = document.getElementById(id);
+         const url = element.getAttribute('url');
+         const fname = element.getAttribute('fname');
+         download2(url, fname);
+        }
+
+        function download2(url, filename) {
+          fetch(url)
+            .then(response => response.blob())
+            .then(blob => {
+              const link = document.createElement("a");
+              link.href = URL.createObjectURL(blob);
+              link.download = filename;
+              link.click();
+          })
+          .catch(console.error);
+        }
+    </script>
 </head>
 <body>
 <div class="columns">

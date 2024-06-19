@@ -76,34 +76,6 @@
     </div>
 </div>
 
-<!--<div class="field is-horizontal">-->
-<!--    <div class="field-label is-normal">-->
-<!--        <label class="label">Definitions</label>-->
-<!--    </div>-->
-<!--    <div class="field-body">-->
-<!--        <div class="field">-->
-<!--            <div class="control">-->
-<!--                    <textarea class="textarea" id="tasks" name="tasks"-->
-<!--                              placeholder="Explain how we can help you"></textarea>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
-
-<!--<div class="field is-horizontal">-->
-<!--    <div class="field-label">-->
-<!--        &lt;!&ndash; Left empty for spacing &ndash;&gt;-->
-<!--    </div>-->
-<!--    <div class="field-body">-->
-<!--        <div class="field">-->
-<!--            <div class="control">-->
-<!--                <button class="button is-primary">-->
-<!--                    Send message-->
-<!--                </button>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
 {% if not editable %}
 </fieldset>
 {% endif %}
@@ -144,5 +116,59 @@ No - report
     </table>
 {% endif %}
 
+{%- endmacro %}
+
+
+
+{% macro form_ta(label, content, funcs) -%}
+<div class="field is-horizontal">
+    <div class="field-label is-normal">
+        <label class="label">{{ label }}</label>
+    </div>
+    <div class="field-body">
+        <div class="field">
+            <div class="control">
+        <textarea class="textarea" name="tasks"
+                  rows="{{ 2+funcs.lines(content) }}">
+{{ content }}
+        </textarea>
+            </div>
+        </div>
+    </div>
+</div>
+{%- endmacro %}
+
+
+{% macro form_ta_buttons(rndId) -%}
+<div class="buttons is-right">
+    <button onclick="copy('{{rndId}}')" class="button is-small">
+        <span class="icon is-small"><i class="fas fa-copy"></i></span>
+    </button>
+    <button onclick="download('{{rndId}}')" class="button is-small">
+        <span class="icon is-small"><i class="fas fa-download"></i></span>
+    </button>
+</div>
+{%- endmacro %}
+
+
+
+{% macro form_ta_wButtons(label, content, funcs, url) -%}
+{% set rndId = funcs.mkrand() %}
+<div class="field is-horizontal">
+    <div class="field-label is-normal">
+        <label class="label">{{ label }}</label>
+        {{ form_ta_buttons(rndId) }}
+    </div>
+    <div class="field-body">
+        <div class="field">
+            <div class="control">
+        <textarea class="textarea" url='{{url}}' fname='raw-report.json' name="tasks" id="{{rndId}}"
+                  rows="{{ 2+funcs.lines(content) }}">
+{{ content }}
+        </textarea>
+            </div>
+        </div>
+    </div>
+</div>
 {%- endmacro %}
 
