@@ -5,6 +5,28 @@
 
 
 {% block content %}
+
+<script>
+    function update_progress() {
+        let stop = true;
+        const els = document.getElementsByTagName("progress");
+        for(const el of els) {
+            console.log(`  begin 1 ---------  ${el.value} `)
+            if (el.value===9999) { continue; }
+            const started = Number.parseFloat(el.getAttribute("started"));
+            el.value = ((new Date()).valueOf()/1000)-started;
+            console.log(`  begin 2 --------- ${started} / ${el.value} / ${el.max}  `)
+            console.log(`  begin 2 --------- ${((new Date()).valueOf()/1000)-started}  `)
+            if (el.value>=el.max) { el.value=9999;} else {stop=False;}
+        }
+        if(!stop) {
+            setTimeout(update_progress, 300);
+        }
+    }
+    setTimeout(update_progress, 300);
+</script>
+
+
 <h1>Scan execution</h1>
 
 <!--<fieldset disabled>-->
@@ -30,7 +52,7 @@
     {{ tags.generic_report(scan.report) }}
 </div>
 
-{% for rndId, exec in enumwid(scan.execs) %}
+{% for rndId, exec in reversed(list(enumwid(scan.execs))) %}
 <div class="box">
 
     <div class="field is-horizontal">
@@ -51,9 +73,12 @@
             <div class="field">
                 <div class="control is-expanded">
                     {% if exec.duration==None %}
-                    <progress class="progress is-info" value="{{exec.elapsed()}}" max="{{exec.avg_duration()}}">{{100*exec.elapsed()/exec.avg_duration()}}</progress>
+                    <progress id="progress-{{exec.id}}" class="progress is-info" started="1719285700.387384"
+                              value="0" max="{{exec.avg_duration()}}">-</progress>
                     {% else %}
-                    <input class="input" type="text" value="{{ exec.duration }}">
+                    <progress id="progress-{{exec.id}}" class="progress is-info" started="1719285700.387384"
+                              value="{{0}}" max="{{exec.avg_duration()}}">-</progress>
+<!--                    <input class="input" type="text" value="{{ exec.duration }}">-->
                     {% endif %}
                 </div>
             </div>
