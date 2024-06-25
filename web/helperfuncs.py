@@ -1,5 +1,7 @@
+import datetime
 import json
 from random import random
+from traceback import print_exc
 
 from flask import url_for, render_template
 
@@ -12,8 +14,14 @@ def enumwid(it):
 
 
 def short_date(d):
-    return str(d).split('.')[0].split('-', 1)[1].rsplit(':', 1)[0]
-
+    if d is None:
+        return '<not set>'
+    try:
+        return str(d).split('.')[0].split('-', 1)[1].rsplit(':', 1)[0]
+    except:
+        print_exc()
+        print("source d: %r" % repr(d) )
+        return str(d).split('.')[0]
 
 def mkrand():
     return str(random()).split('.')[1]
@@ -32,6 +40,7 @@ def render(template, **kwargs):
            'batchs': get_batchs(),
            'None': None,
            'short_repo':lambda x: '../'+x.rsplit('/', 1)[1].replace('.git', ''),
+           'datetime': datetime.datetime,
            }
     for k, v in new.items():
         setattr(funcs, k, v)

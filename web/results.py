@@ -20,9 +20,21 @@ class Finding:
     lineno: int
     scanner: Scanner
     jsonextra: str
-    desc: Optional[str]
+    desc: Optional[str]=''
 
     def as_dict(self):
+        print(repr(self.level))
+        print(repr({
+            'name': self.name,
+            'desc': self.desc,
+            'category': self.category,
+            'level': self.level,
+            # 'level': self.level.name,
+            'filename': self.filename,
+            'lineno': self.lineno,
+            'jsonextra': self.jsonextra,
+            'scanner': self.scanner.name if self.scanner is not None else '',
+        }))
         return {
             'name': self.name,
             'desc': self.desc,
@@ -50,7 +62,7 @@ class ResultsReport:
         if self.findings is None:
             self.findings = []
         self.findings.append(f)
-        if not f.scanner in self.scanners:
+        if not f.scanner.name in self.scanners:
             self.scanners.append(f.scanner)
 
     def as_dict(self):
@@ -63,13 +75,15 @@ class ResultsReport:
                             if self.findings is not None else []}
 
     def as_dict_ex(self):
-        return {'name': self.name,
+        x = {'name': self.name,
                 'date': str(self.date),
                 'issuer': self.issuer,
-                'scanners': self.scanners,
+                'scanners': [s for s in self.scanners] if self.scanners else self.scanners,
                 'finding_count': self.finding_count,
                 'findings': [f.as_dict() for f in self.findings]
                             if self.findings is not None else []}
+        print("---> %r"%x)
+        return x
 
     def to_json(self, indent=None):
         return json.dumps(self.as_dict_ex(), indent=indent)

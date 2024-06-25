@@ -34,7 +34,7 @@ class BaseModel(Model):
 
 
 class BatchExec(BaseModel):
-    timestamp = DateTimeField(default=datetime.datetime.now)
+    timestamp = DateTimeField(default=datetime.datetime.now, index=True)
     name = CharField(null=True)
     author = CharField(null=True)
     email = CharField(null=True)
@@ -46,12 +46,12 @@ class BatchExec(BaseModel):
 
 class ScannerExec(BaseModel):
     batch = ForeignKeyField(BatchExec, null=True,  backref='scans')
-    timestamp = DateTimeField(default=datetime.datetime.now)
+    timestamp = DateTimeField(default=datetime.datetime.now, index=True)
     repo = CharField(unique=False)
     commit = CharField(unique=False)
     rev_hash = CharField(unique=False, null=True)
     path = CharField(unique=False)
-    scanner = CharField(unique=False, default="Scout")
+    scanner = CharField(unique=False, default="Scout", index=True)
     scanner_version = CharField(unique=False, null=True)
     errors = TextField(null=True)
 
@@ -129,7 +129,7 @@ class Report(BaseModel):
         d = self.data
         found = defaultdict(int)
         for vuln in d['findings']:
-            found[vuln['priority']]+=1
+            found[vuln['level']]+=1
         return PrioritySum(**found)
 
     @property
@@ -142,6 +142,7 @@ class Report(BaseModel):
 
 class Execution(BaseModel):
     scan = ForeignKeyField(ScannerExec, backref='execs', null=True)
+    kind = CharField(unique=False, null=False, index=True)
     cmdargs = CharField(unique=False, null=True)
     wd = CharField(unique=False, null=True)
     env = CharField(unique=False, null=True)
@@ -153,8 +154,9 @@ class Execution(BaseModel):
         return f'<{self.id}: {self.cmdargs[:30]}  ({self.ret})>'
 
     @classmethod
-    def Create(cls, cmdargs=None, wd=None, env=None, scan=None):
+    def Create(cls, kind, cmdargs=None, wd=None, env=None, scan=None):
         return Execution.create(
+            kind=kind,
             scan=scan,
             cmdargs=json.dumps(cmdargs),
             wd=wd,
@@ -180,11 +182,25 @@ class Execution(BaseModel):
     def get_output_info(self):
         return self.get_output_fname(), 'text/plain'
 
+    def avg_duration(self):
+        avg = (Execution.select(fn.AVG(Execution.duration))
+                            .where(Execution.kind==self.kind).scalar())
+        if avg is None:
+            return 0
+        avg = int((avg*10)+0.5)/10
+        return avg
+
+    def elapsed(self):
+        if not(self.duration is None):
+            return self.duration
+        if self.timestamp is None:
+            return 0
+        return datetime.datetime.now().timestamp() - self.timestamp.timestamp()
 
 class OutputLine(BaseModel):
     execution = ForeignKeyField(Execution, backref='output_line')
     is_out = BooleanField(default=True)
-    idx = IntegerField(null=False)
+    idx = IntegerField(null=False, index=True)
     line = CharField(null=False)
 
     @classmethod

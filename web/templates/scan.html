@@ -39,8 +39,27 @@
         </div>
         <div class="field-body">
             <div class="field">
-                <div class="control">
+                <div class="control is-expanded">
                     <input class="input" type="text" value="{{ ' '.join(json.loads(exec.cmdargs)) }}">
+                </div>
+            </div>
+            <div class="field">
+                <div class="control is-expanded">
+                    <input class="input" type="text" value="{{ exec.elapsed() }}">
+                </div>
+            </div>
+            <div class="field">
+                <div class="control is-expanded">
+                    {% if exec.duration==None %}
+                    <progress class="progress is-info" value="{{exec.elapsed()}}" max="{{exec.avg_duration()}}">{{100*exec.elapsed()/exec.avg_duration()}}</progress>
+                    {% else %}
+                    <input class="input" type="text" value="{{ exec.duration }}">
+                    {% endif %}
+                </div>
+            </div>
+            <div class="field">
+                <div class="control is-expanded">
+                    <input class="input" type="text" value="{{ exec.avg_duration() }}">
                 </div>
             </div>
         </div>

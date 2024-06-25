@@ -4,6 +4,41 @@
 
 {% block content %}
 <h1>Create Batch</h1>
+<script>
+    function doblesplit(st) {
+        if (st.indexOf(',')>=0) { return st.split(','); }
+        if (st.indexOf('\r\n')>=0) { return st.split('\r\n'); }
+        return [st];
+    }
+    function generate() {
+        //event.preventDefault();
+        var scanners = [];
+        const el_repo = document.getElementById("repo");
+        const el_commit = document.getElementById("commit");
+        const el_paths = document.getElementById("paths");
+        for (scanner of ["scout", "test"]) {
+            const el = document.getElementById(scanner+"_scanner"); //id="scout_scanner"
+            if (el.checked) {
+                scanners.push(scanner);
+            }
+        }
+        const repos = doblesplit(el_repo.value);
+        const commits = doblesplit(el_commit.value);
+        const paths = doblesplit(el_paths.value);
+        const batch = [];
+        for (const repo of repos) {
+            for(const commit of commits) {
+                for(const path of paths) {
+                    for(const scanner of scanners) {
+                        batch.push([repo, commit, path, scanner].join(','));
+                    }
+                }
+            }
+        }
+        document.getElementById('tasks').value = batch.join('\r\n');
+    }
+</script>
+
 <form method="post">
 
     <div class="field is-horizontal">
@@ -38,7 +73,7 @@
             <div class="field">
                 <p class="control is-expanded has-icons-left has-icons-right">
                     <input class="input is-success" name="email" placeholder="Email" type="email"
-                           value="alex@smith.com">
+                           value="drunner@coinfabrik.com">
                     <span class="icon is-small is-left">
           <i class="fas fa-envelope"></i>
         </span>
@@ -63,6 +98,109 @@
         </div>
     </div>
 
+
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label">Add</label>
+        </div>
+        <div class="field-body">
+            <div class="field">
+                <p class="control is-expanded">
+                    <input class="input" id="repo" placeholder="repo" type="text"
+                           value="git@github.com:CoinFabrik/scout-soroban.git">
+                </p>
+            </div>
+            <div class="field">
+                <p class="control is-expanded">
+                    <input class="input is-success" id="commit" placeholder="commit" type="text" value="main">
+                </p>
+            </div>
+
+            <div class="field">
+                <p class="control is-expanded">
+                    <label class="checkbox"><input id="scout_scanner" type="checkbox" checked/>scout</label>
+                    <label class="checkbox"><input id="test_scanner" type="checkbox"/>test</label>
+                </p>
+            </div>
+        </div>
+    </div>
+
+<!--  V2 -->
+<!--    <div class="field is-horizontal">-->
+<!--        <div class="field-label is-normal">-->
+<!--            <label class="label">Add</label>-->
+<!--        </div>-->
+<!--        <div class="field-body">-->
+<!--            <div class="field">-->
+<!--                <p class="control is-expanded">-->
+<!--                    <textarea class="textarea" id="paths" name="paths"-->
+<!--                              placeholder="Paths in the repo">test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/</textarea>-->
+<!--                </p>-->
+<!--            </div>-->
+
+<!--            <div class="field">-->
+<!--                <p class="control is-expanded">-->
+<!--                    <label class="checkbox">-->
+<!--                        <input type="checkbox"/>-->
+<!--                        scout-->
+<!--                    </label>-->
+<!--                    <label class="checkbox">-->
+<!--                        <input type="checkbox"/>-->
+<!--                        test-->
+<!--                    </label>-->
+
+<!--                </p>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+<!--  V3 -->
+<!--    <div class="field is-horizontal">-->
+<!--        <div class="field-label is-normal">-->
+<!--            <label class="label">Add</label>-->
+<!--        </div>-->
+<!--        <div class="field-body">-->
+<!--            <div class="field">-->
+<!--                <p class="control is-expanded">-->
+<!--                    <input class="input" placeholder="rep" type="text"-->
+<!--                           value="git@github.com:CoinFabrik/scout-soroban.git">-->
+<!--                </p>-->
+<!--            </div>-->
+<!--            <div class="field">-->
+<!--                <p class="control is-expanded">-->
+<!--                    <input class="input is-success" placeholder="commit" type="text" value="main">-->
+<!--                </p>-->
+<!--            </div>-->
+<!--            <div class="field">-->
+<!--                <p class="control is-expanded">-->
+<!--                <div class="select is-multiple is-small">-->
+<!--                    <select multiple size="4">-->
+<!--                        <option value="scout">Scout</option>-->
+<!--                        <option value="test">Test</option>-->
+<!--                        <option value="other">other</option>-->
+<!--                    </select>-->
+<!--                </div>-->
+<!--                </p>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+
+
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label">Paths</label>
+        </div>
+        <div class="field-body">
+            <div class="field">
+                <div class="control">
+                    <textarea class="textarea" id="paths" name="paths"
+                              placeholder="Paths in the repo">test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <div class="field is-horizontal">
         <div class="field-label is-normal">
             <label class="label">Definitions</label>
@@ -71,7 +209,7 @@
             <div class="field">
                 <div class="control">
                     <textarea class="textarea" id="tasks" name="tasks"
-                              placeholder="Explain how we can help you"></textarea>
+                              placeholder="repo,commit,path,scanner"></textarea>
                 </div>
             </div>
         </div>
@@ -82,12 +220,18 @@
             <!-- Left empty for spacing -->
         </div>
         <div class="field-body">
-            <div class="field">
+            <div class="field is-grouped">
                 <div class="control">
                     <button class="button is-primary">
-                        Send message
+                        Submit
                     </button>
                 </div>
+
+                <div class="control">
+                    <button type="other" onclick="generate(); return false;" class="button is-light">Add</button>
+                </div>
+
+
             </div>
         </div>
     </div>

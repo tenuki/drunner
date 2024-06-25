@@ -99,7 +99,7 @@ def scan_exec(id: int):  # put application's code here
 @app.route('/addsite/', methods=['GET', 'POST'])
 def addsite():
     if request.method == 'POST':
-        e = Execution.Create(['git clone ' + request.form['site']],
+        e = Execution.Create('custom-clone', ['git clone ' + request.form['site']],
                              env={'GIT_SSH_COMMAND': "ssh -oStrictHostKeyChecking=no "})
         add_keys_for_site.send(e.id)
         return redirect(url_for('exec', eid=e.id), code=302)
@@ -109,7 +109,7 @@ def addsite():
 @app.route('/build/test', methods=['GET', 'POST'])
 def buildtest():
     if request.method == 'POST':
-        e = Execution.Create(['docker build -t drunner/testscan:latest .'])
+        e = Execution.Create('custom-build-test', ['docker build -t drunner/testscan:latest .'])
         add_keys_for_site.send(e.id)
         return redirect(url_for('exec', eid=e.id), code=302)
     return render('build_test.html')

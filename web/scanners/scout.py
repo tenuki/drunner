@@ -16,19 +16,26 @@ class ScoutRunner(ScannerRunner):
     CONTAINER_RAW_REPORT_NAME = os.path.join(ScannerRunner.OUTPUT_DIR_NAME, 'report.json')
 
     def _get_version(self):
-        ex = self.exec([f'docker run -i --rm -e INPUT_SCOUT_ARGS=--version {self.IMAGE}'])
+        ex = self.exec('run-get-version',
+                       [f'docker run -i --rm -e INPUT_SCOUT_ARGS=--version {self.IMAGE}'])
         ex.scan.scanner_version = self.version = ex.output
         ex.scan.save()
 
+    def is_v0_2_10(self):
+        return self.version.endswith('0.2.10')
+
     def run_image(self):
         self._get_version()
-
-        cmd = (f'docker run -i --rm -e CARGO_TARGET_DIR=/tmp '
-               f'-e INPUT_TARGET=/scoutme/srcs/{self.path} '
-               f'-e RUST_BACKTRACE=full '
-               f'-e INPUT_SCOUT_ARGS=" --output-format json --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}" '
-               f'-v {self.tmpdir}:/scoutme {self.IMAGE}')
-        self.exec([cmd])
+        format_name = 'json' if self.is_v0_2_10() else 'raw-json'
+        env = {
+            'INPUT_TARGET': f'/scoutme/srcs/{self.path}',
+            'RUST_BACKTRACE': 'full',
+            'INPUT_SCOUT_ARGS': f" --output-format {format_name} --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}",
+            'CARGO_TARGET_DIR': '/tmp',
+        }
+        envs = ' '.join(f'-e {key}="{value}"' for key, value in env.items())
+        cmd = (f'docker run -i --rm {envs} -v {self.tmpdir}:/scoutme {self.IMAGE}')
+        self.exec('run-image', [cmd])
 
     def process_report(self, raw_report):
         report = ResultsReport(

@@ -78,11 +78,12 @@ def launch_thread(*args):
 
 
 def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True) -> Execution:
-    ex.timestamp = datetime.datetime.now()
     if not (env is None):
         base = os.environ.copy()
         base.update(env)
         env = base
+    ex.timestamp = datetime.datetime.now()
+    ex.save()
     p = Popen(cmdargs, cwd=wd, env=env, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
     (child_stdin, child_stdout, child_stderr) = (p.stdin, p.stdout, p.stderr)
     q = Queue()
@@ -106,11 +107,11 @@ def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True) -> Execution:
 
 
 # @dramatiq.actor
-def exec(cmdargs=None, wd=None, env=None, de: ScannerExec=None, e:Execution=None) -> Execution:
+def exec(kind, cmdargs=None, wd=None, env=None, de: ScannerExec=None, e:Execution=None) -> Execution:
     if e is None and cmdargs is None:
         raise Exception("Either cmdargs or cmdargs must not be None")
     if e is None:
-        e = Execution.Create(cmdargs, wd, env, scan=de)
+        e = Execution.Create(kind, cmdargs, wd, env, scan=de)
     else:
         e.wd = wd
         cmdargs = json.loads(e.cmdargs)

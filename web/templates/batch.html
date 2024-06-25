@@ -18,12 +18,12 @@
 <table class="table is-striped is-hoverable is-fullwidth">
     <thead>
     <tr>
-        <th>id</th>
+<!--        <th>id</th>-->
         <th>repo</th>
         <th>commit</th>
         <th>path</th>
         <th>scanner</th>
-        <th>info</th>
+        <th style="min-width: 250px">info</th>
         <th>#err</th>
     </tr>
     </thead>
@@ -32,7 +32,8 @@
     {% for scan in batch.scans %}
 
     <tr>
-            {% for value in [scan.id, scan.repo, scan.commit, scan.path, scan.scanner] %}
+            {# scan.id,  #}
+            {% for value in [scan.repo, scan.commit, scan.path, scan.scanner] %}
             <td>
                 {% call(inner) link_scan(scan) %}
                     {{value}}

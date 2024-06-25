@@ -9,7 +9,7 @@ from dramatiq.brokers.redis import RedisBroker
 
 import worker
 import model
-from results import ResultsReport, Finding, Priority
+from results import ResultsReport, Finding, Priority, Scanner
 
 # from scanners.scout import ScoutRunner
 
@@ -92,13 +92,13 @@ class ScannerRunner(object):
     def output_fname(self):
         return os.path.join(self.tmpdir, self.OUTPUT_DIR_NAME, 'report.json')
 
-    def exec(self, cmdargs, wd=None, env=None) -> model.Execution:
+    def exec(self, kind, cmdargs, wd=None, env=None) -> model.Execution:
         if wd is None:
             wd = self.tmpdir
         else:
             if not os.path.isabs(wd):
                 wd = os.path.join(self.tmpdir, wd)
-        return worker.exec(cmdargs, wd=wd, env=env, de=self.m)
+        return worker.exec(self.__class__.__name__+"-"+kind, cmdargs, wd=wd, env=env, de=self.m)
 
     def prepare_image(self):
         """
@@ -109,13 +109,13 @@ class ScannerRunner(object):
         - tmpdir is expected to be mounted somewhere in the container
         """
         os.mkdir(os.path.join(self.tmpdir, self.OUTPUT_DIR_NAME))
-        ex1 = self.exec([f'git clone {self.repo} srcs'])
+        ex1 = self.exec('repo-clone', [f'git clone {self.repo} srcs'])
         if ex1.ret!=0:
             raise CloneFailed('git clone failed')
-        ex2 = self.exec([f'git checkout {self.commit}'], 'srcs')
+        ex2 = self.exec('repo-checkout-revision', [f'git checkout {self.commit}'], 'srcs')
         if ex2.ret!=0:
             raise CheckoutFailed('git checkout failed')
-        ex3 = self.exec([f'git rev-parse HEAD'], 'srcs')
+        ex3 = self.exec('repo-get-revision', [f'git rev-parse HEAD'], 'srcs')
         if ex3.ret!=0:
             raise CheckoutFailed('git rev-parse HEAD failed')
         ex3.scan.rev_hash = ex3.output
@@ -131,7 +131,7 @@ class ScannerRunner(object):
             with tempfile.TemporaryDirectory(prefix='drunner-addkey-',
                                              suffix='tmp') as tmpdir:
                 e = model.Execution.get_by_id(eid)
-                r = worker.exec(wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
+                r = worker.exec('custom-add-key', wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
         except:
             traceback.print_exc()
 
@@ -142,10 +142,12 @@ class ScannerRunner(object):
             with tempfile.TemporaryDirectory(prefix='drunner-build-test-',
                                              suffix='tmp') as tmpdir:
                 e = model.Execution.get_by_id(eid)
-                r = worker.exec(wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
+                r = worker.exec('custom-build-test', wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
         except:
             traceback.print_exc()
 
+def PrioStr(p: Priority) -> str:
+    return str(p).split('.')[-1]
 
 class TestScanRunner(ScannerRunner):
     IMAGE = 'drunner/testscan:latest'
@@ -156,7 +158,7 @@ class TestScanRunner(ScannerRunner):
                f'-e INPUT_TARGET=/scanme/srcs/{self.path} '
                f'-e OUTPUT_NAME=/scanme/{self.CONTAINER_RAW_REPORT_NAME} '
                f'-v {self.tmpdir}:/scanme {self.IMAGE}')
-        return self.exec([cmd])
+        return self.exec('run-image', [cmd])
 
     def process_report(self, raw_report):
         report = ResultsReport(
@@ -165,13 +167,17 @@ class TestScanRunner(ScannerRunner):
             composite=False,
             scanners=[self.m.scanner])
         report.addFinding(Finding(name="vuln1 at x", category='vuln1',
-                            level=Priority.Medium, scanner=self.m.scanner))
+                            level=PrioStr(Priority.Medium), scanner=Scanner(self.m.scanner),
+                                  filename='x.pas', lineno=75, jsonextra={}))
         report.addFinding(Finding(name="vuln9 at y", category='vuln9',
-                            level=Priority.Low, scanner=self.m.scanner))
+                            level=PrioStr(Priority.Low), scanner=Scanner(self.m.scanner),
+                                  filename='y.pas', lineno=75, jsonextra={}))
         report.addFinding(Finding(name="vuln5 at z", category='vuln5',
-                            level=Priority.High, scanner=self.m.scanner))
+                            level=PrioStr(Priority.High), scanner=Scanner(self.m.scanner),
+                                  filename='x.pas', lineno=75, jsonextra={}))
         report.addFinding(Finding(name="vuln9 at t", category='vuln9',
-                            level=Priority.Low, scanner=self.m.scanner))
+                            level=PrioStr(Priority.Low), scanner=Scanner(self.m.scanner),
+                                  filename='x.pas', lineno=75, jsonextra={}))
         return report
 
 
@@ -194,7 +200,7 @@ def add_keys_for_site(e_id: int):
 
 
 def test_add_site():
-    e = model.Execution.Create(['git clone git@github.com:tenuki/no-code.git'],
+    e = model.Execution.Create('custom-add-key',['git clone git@github.com:tenuki/no-code.git'],
                                env={'GIT_SSH_COMMAND': "ssh -oStrictHostKeyChecking=no "})
     add_keys_for_site(e.id)
 
