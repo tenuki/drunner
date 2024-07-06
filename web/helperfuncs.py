@@ -45,7 +45,8 @@ def render(template, **kwargs):
     for k, v in new.items():
         setattr(funcs, k, v)
 
-    for f in [list, len, url_for, repr, type, json, enumwid, short_date, mkrand, lines, reversed]:
+    for f in [list, len, url_for, repr, type, json, enumwid,
+              short_date, mkrand, lines, reversed, max, min]:
         new[f.__name__] = f
         setattr(funcs, f.__name__, f)
     new['funcs'] = funcs

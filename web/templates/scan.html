@@ -5,7 +5,15 @@
 
 
 {% block content %}
-
+      <style type='text/css'>
+   textarea {
+    white-space: nowrap;
+    overflow:    scroll;
+    overflow-y:  hidden;
+    overflow-x:  scroll;
+    overflow:    -moz-scrollbars-horizontal;
+   }
+  </style>
 <script>
     function update_progress() {
         let stop = true;
@@ -14,10 +22,11 @@
             console.log(`  begin 1 ---------  ${el.value} `)
             if (el.value===9999) { continue; }
             const started = Number.parseFloat(el.getAttribute("started"));
-            el.value = ((new Date()).valueOf()/1000)-started;
-            console.log(`  begin 2 --------- ${started} / ${el.value} / ${el.max}  `)
-            console.log(`  begin 2 --------- ${((new Date()).valueOf()/1000)-started}  `)
-            if (el.value>=el.max) { el.value=9999;} else {stop=False;}
+            const d = ((new Date()).valueOf()/1000);
+            console.log(`  begin 2 ---------started: ${started} /value: ${el.value} /max: ${el.max}  `)
+            el.value = d-started;
+            console.log(`  begin 2 ---------d: ${d} / d-started: ${d-started}  `)
+            if (el.value>=el.max) { el.value=9999;} else {stop=false;}
         }
         if(!stop) {
             setTimeout(update_progress, 300);
@@ -62,31 +71,34 @@
         <div class="field-body">
             <div class="field">
                 <div class="control is-expanded">
-                    <input class="input" type="text" value="{{ ' '.join(json.loads(exec.cmdargs)) }}">
+                    <input readonly class="input is-static" type="text" value="{{ ' '.join(json.loads(exec.cmdargs)) }}">
                 </div>
             </div>
-            <div class="field">
-                <div class="control is-expanded">
-                    <input class="input" type="text" value="{{ exec.elapsed() }}">
-                </div>
-            </div>
-            <div class="field">
-                <div class="control is-expanded">
-                    {% if exec.duration==None %}
-                    <progress id="progress-{{exec.id}}" class="progress is-info" started="1719285700.387384"
-                              value="0" max="{{exec.avg_duration()}}">-</progress>
-                    {% else %}
-                    <progress id="progress-{{exec.id}}" class="progress is-info" started="1719285700.387384"
-                              value="{{0}}" max="{{exec.avg_duration()}}">-</progress>
-<!--                    <input class="input" type="text" value="{{ exec.duration }}">-->
-                    {% endif %}
-                </div>
-            </div>
-            <div class="field">
-                <div class="control is-expanded">
-                    <input class="input" type="text" value="{{ exec.avg_duration() }}">
-                </div>
-            </div>
+            {% if exec.duration==None %}
+                    <div class="field">
+                        <div class="control is-expanded">
+                            <input readonly style="max-width:70px"  class="input" type="text" value="{{ exec.elapsed() }}">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control is-expanded">
+                                <progress id="progress-{{exec.id}}" class="progress is-info" started="{{exec.timestamp.timestamp()}}"
+                                      value="0" max="{{exec.avg_duration()}}">-</progress>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control is-expanded">
+                            <input style="max-width:70px" class="input" type="text" value="{{ exec.avg_duration() }}">
+                        </div>
+                    </div>
+            {% else %}
+                    <div class="field">
+                        <div class="control is-expanded">
+                            <input readonly size="10"
+                                   class="input is-static" type="text" value="{{ exec.duration }} sec" readonly>
+                        </div>
+                    </div>
+            {% endif %}
         </div>
     </div>
 
@@ -98,11 +110,12 @@
         <div class="field-body">
             <div class="field">
                 <div class="control">
-        <textarea id="{{ rndId }}"
+        <textarea id="{{ rndId }}" readonly  wrap="off"
                   url="{{url_for('get_exec_output', id=exec.id)}}"
                   fname="{{exec.get_output_fname()}}"
                   class="textarea is-family-code"
-                  rows="{{len(list(exec.output_line))+1}}"
+                  rows="{{min(50, 1+len(exec.output_line))}}"
+                  style="white-space: nowrap;  overflow: auto;"
         >{%- for line in exec.output_line -%}
 {{ line.line+"\r\n" }}
 {%- endfor -%}</textarea>
