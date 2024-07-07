@@ -10,8 +10,7 @@ from dramatiq.brokers.redis import RedisBroker
 import worker
 import model
 from results import ResultsReport, Finding, Priority, Scanner
-
-# from scanners.scout import ScoutRunner
+from errors import CloneFailed, CheckoutFailed, UnknownScanner
 
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 redis_broker = RedisBroker(host=REDIS_HOST)
@@ -28,39 +27,54 @@ def SwitchDir(dirname: str):
         os.chdir(prev)
 
 
-class RunnerException(Exception):
-    pass
-
-
-class CloneFailed(RunnerException):
-    pass
-
-
-class CheckoutFailed(RunnerException):
-    pass
-
-
 class ScannerRunner(object):
     OUTPUT_DIR_NAME = 'out'
     Scanners = {}
 
     @classmethod
+    @property
+    def Name(cls):
+        return cls.__name__
+
+    @classmethod
     def Create(cls, repo: str, commit: str, path: str = '.', scanner: str='scout'):
         m = model.ScannerExec.create(repo=repo, commit=commit, path=path, scanner=scanner)
-        return cls.Get(m)
+        return cls.GetForExec(m)
 
     @classmethod
     def Register(cls, klass, name):
         cls.Scanners[name] = klass
 
     @classmethod
-    def Get(cls, m: model.ScannerExec):
-        klass = cls.Scanners.get(m.scanner)
+    def Get(cls, name):
+        klass = cls.Scanners.get(name)
         if not klass is None:
-            return klass(m)
-        if 'test' in m.scanner.lower():
-            return TestScanRunner(m)
-        raise RuntimeError(f'Unknown Docker scanner: {m.scanner}.')
+            return klass
+        if 'test' in name.lower():
+            return TestScanRunner
+        raise UnknownScanner(f'Unknown Scanner: {name} (Registered: {",".join(cls.Scanners.keys())}).')
+
+    @classmethod
+    def GetForExec(cls, m: model.ScannerExec):
+        return cls.Get(m.scanner)(m)
+
+    @classmethod
+    def Build(cls, scanner: str):
+        return cls.Get(scanner).BuildMe()
+
+    @classmethod
+    def BuildMe(cls):
+        return model.Execution.Create('custom-build-'+cls.__name__,
+                                    [f'docker build -t {cls.IMAGE} .'])
+
+    @classmethod
+    def Update(cls, scanner: str):
+        return cls.Get(scanner).UpdateMe()
+
+    @classmethod
+    def UpdateMe(cls):
+        return model.Execution.Create('custom-update-'+cls.__name__,
+                                    [f'docker pull {cls.IMAGE}'])
 
     def __init__(self, m: model.ScannerExec):
         self.path = m.path
@@ -126,14 +140,16 @@ class ScannerRunner(object):
             return f.read()
 
     @classmethod
-    def Add_keys_for_site(cls, eid: int):
+    def GenericTaskRunner(cls, eid: int, task_kind_str: str):
         try:
-            with tempfile.TemporaryDirectory(prefix='drunner-addkey-',
+            with tempfile.TemporaryDirectory(prefix=f'drunner-{task_kind_str}-',
                                              suffix='tmp') as tmpdir:
                 e = model.Execution.get_by_id(eid)
-                r = worker.exec('custom-add-key', wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
+                r = worker.exec(task_kind_str, wd=tmpdir, e=e,
+                                env=json.loads(e.env) if e.env else None)
         except:
             traceback.print_exc()
+
 
     @classmethod
     def Build_test_scanner(cls, eid: int):
@@ -142,12 +158,15 @@ class ScannerRunner(object):
             with tempfile.TemporaryDirectory(prefix='drunner-build-test-',
                                              suffix='tmp') as tmpdir:
                 e = model.Execution.get_by_id(eid)
-                r = worker.exec('custom-build-test', wd=tmpdir, e=e, env=json.loads(e.env) if e.env else None)
+                r = worker.exec('custom-build-test', wd=tmpdir, e=e,
+                                env=json.loads(e.env) if e.env else None)
         except:
             traceback.print_exc()
 
+
 def PrioStr(p: Priority) -> str:
     return str(p).split('.')[-1]
+
 
 class TestScanRunner(ScannerRunner):
     IMAGE = 'drunner/testscan:latest'
@@ -184,7 +203,7 @@ class TestScanRunner(ScannerRunner):
 @dramatiq.actor(time_limit=1200000)
 def execute_task(task_id):
     a_task = model.ScannerExec.get_by_id(task_id)
-    runner = ScannerRunner.Get(a_task)
+    runner = ScannerRunner.GetForExec(a_task)
     runner.run()
 
 
@@ -195,14 +214,14 @@ def execute_batch(batch_id, tasks_ids=()):
 
 
 @dramatiq.actor
-def add_keys_for_site(e_id: int):
-    ScannerRunner.Add_keys_for_site(e_id)
+def generic_task_runner(e_id: int):
+    ScannerRunner.GenericTaskRunner(e_id,'custom-add-key' )
 
 
 def test_add_site():
     e = model.Execution.Create('custom-add-key',['git clone git@github.com:tenuki/no-code.git'],
                                env={'GIT_SSH_COMMAND': "ssh -oStrictHostKeyChecking=no "})
-    add_keys_for_site(e.id)
+    generic_task_runner(e.id)
 
 
 from scanners.scout import ScoutRunner

@@ -8,6 +8,8 @@ from flask import Flask, request, url_for, redirect, Response
 from model import BatchExec, ScannerExec, Execution, Report, get_scans
 from helperfuncs import render, to_str
 
+from drunner import generic_task_runner, execute_batch, ScannerRunner
+
 
 app = Flask(__name__)
 REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
@@ -27,7 +29,9 @@ def exec(eid: int):  # put application's code here
     lines.sort(key=lambda line: line.idx)
     return render("scan.html",
                   exec_fields={},
-                  big_fields={'output': '\r\n'.join(line.line for line in lines)})
+                  big_fields={
+                      'output': '\r\n'.join(line.line
+                                            for line in lines)})
 
 @app.route('/batch/<id>')
 def batch(id: int):  # put application's code here
@@ -101,18 +105,26 @@ def addsite():
     if request.method == 'POST':
         e = Execution.Create('custom-clone', ['git clone ' + request.form['site']],
                              env={'GIT_SSH_COMMAND': "ssh -oStrictHostKeyChecking=no "})
-        add_keys_for_site.send(e.id)
+        generic_task_runner.send(e.id)
         return redirect(url_for('exec', eid=e.id), code=302)
     return render('add_site.html')
 
 
-@app.route('/build/test', methods=['GET', 'POST'])
-def buildtest():
+@app.route('/build/<scanner>', methods=['GET', 'POST'])
+def build(scanner: str):
     if request.method == 'POST':
-        e = Execution.Create('custom-build-test', ['docker build -t drunner/testscan:latest .'])
-        add_keys_for_site.send(e.id)
+        e = ScannerRunner.Build(scanner)
+        generic_task_runner.send(e.id)
         return redirect(url_for('exec', eid=e.id), code=302)
-    return render('build_test.html')
+    return render('build_test.html', scanner=scanner, action='build')
+
+@app.route('/update/<scanner>', methods=['GET', 'POST'])
+def update(scanner: str):
+    if request.method == 'POST':
+        e = ScannerRunner.Update(scanner)
+        generic_task_runner.send(e.id)
+        return redirect(url_for('exec', eid=e.id), code=302)
+    return render('build_test.html', scanner=scanner, action='update')
 
 
 @app.route('/create/', methods=('GET', 'POST'))
@@ -148,13 +160,13 @@ def scans():
     return get_scans()
 
 
-@dramatiq.actor
-def add_keys_for_site(e_id: int):
-    pass
+# @dramatiq.actor
+# def add_keys_for_site(e_id: int):
+#     pass
 
-@dramatiq.actor(time_limit=1200000)
-def execute_batch(batch, tasks=()):
-    pass
+# @dramatiq.actor(time_limit=1200000)
+# def execute_batch(batch, tasks=()):
+#     pass
 
 
 def testme():
@@ -173,5 +185,5 @@ def testme():
 
 
 if __name__ == '__main__':
-    # testme() # app.run()P3U
+    # testme() # app.run()
     app.run(host=os.environ.get('LISTEN_IP', '127.0.0.1'))

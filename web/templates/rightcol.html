@@ -1,7 +1,12 @@
 <div class="buttons">
-    {% for link_button in ['addsite', 'buildtest'] %}
-    <a class="button is-small is-responsive is-primary is-dark" href="{{ url_for(link_button) }}">
-        {{link_button}}
+    {% for _str,link_button, btn_type, extra in [
+        ('Update Scout', 'update', 'link', {'scanner':'scout'}),
+        ('Add Repo Key', 'addsite', 'danger', {}),
+        ('Build Test', 'build', 'danger', {'scanner':'test'}),
+    ] %}
+    <a class="button is-small is-responsive is-{{btn_type}} is-dark"
+       href="{{ url_for(link_button, **extra) }}">
+        {{_str}}
     </a>
     {% endfor %}
 </div>
