@@ -7,6 +7,8 @@ from typing import List
 from drunner import ScannerRunner
 from results import ResultsReport, Finding, Priority, Scanner, SpanObject, SrcExtra
 
+from model import ScannerExec
+
 
 ScoutCodeCategories = {}
 
@@ -37,25 +39,29 @@ class ScoutRunner(ScannerRunner):
         cmd = (f'docker run -i --rm {envs} -v {self.tmpdir}:/scoutme {self.IMAGE}')
         self.exec('run-image', [cmd])
 
-    def process_report(self, raw_report):
-        report = ResultsReport(
-            name=f"Single {self.m.scanner} execution on {self.repo}@{self.commit}.",
-            date=self.m.timestamp,
-            composite=False,
-            scanners=[self.m.scanner])
-
+    @staticmethod
+    def _get_vulns_from_raw_report(raw_report):
         for line in raw_report.splitlines():
             try:
                 # disable: unsafe-unwrap
                 msg = json.loads(line)
                 sv = ScoutVulnerability.FromJsonObj(msg)
                 if sv is None: continue
-                report.addFinding(sv.asFinding())
+                yield sv.asFinding()
                 # report.addFinding(Finding(name=msg['message']['message'], category='',
                 #         level=Priority.Medium,
                 #         scanner=self.m.scanner))
             except:
                 print(f"Invalid line in output: '{line}'. ignoring..", file=sys.stderr)
+
+    def process_report(self, raw_report):
+        report = ResultsReport(
+            name=f"Single {self.m.scanner} execution on {self.repo}@{self.commit}.",
+            date=self.m.timestamp,
+            composite=False,
+            scanners=[self.m.scanner])
+        for vuln in self._vulns_from_raw_report(raw_report):
+            report.addFinding(vuln)
         return report
 
 ScannerRunner.Register(ScoutRunner, 'scout')
@@ -105,3 +111,15 @@ class ScoutVulnerability:
             src_extra=SrcExtra(
                 filename=json_obj['message']['spans'][0]['file_name'],
                 manifest=json_obj['manifest_path']))
+
+
+if __name__=="__main__":
+    # show some
+    scan = ScannerExec.get_by_id(14)
+    sr = ScoutRunner(scan)
+    rr = scan.raw_report
+    for v in ScoutRunner._get_vulns_from_raw_report(rr.content):
+        print(v)
+    rep = sr.process_report(rr.content)
+    print(rr)
+

@@ -7,7 +7,6 @@ from collections import defaultdict
 
 from peewee import *
 
-
 ## debug queries..
 logger = logging.getLogger('peewee')
 if os.environ.get('DBLOG', 'false').lower() == 'true':
@@ -74,6 +73,13 @@ class ScannerExec(BaseModel):
     @property
     def report(self):
         reps = [r for r in self.reports if not r.is_raw]
+        if len(reps) == 0:
+            return None
+        return reps[0]
+
+    @property
+    def raw_report(self):
+        reps = [r for r in self.reports if r.is_raw]
         if len(reps) == 0:
             return None
         return reps[0]
@@ -235,3 +241,5 @@ def get_scans():
 def get_batchs():
     return [x for x in
             BatchExec.select().order_by(BatchExec.timestamp.desc())]
+
+

@@ -224,11 +224,11 @@ def test_add_site():
     generic_task_runner(e.id)
 
 
-from scanners.scout import ScoutRunner
-ScannerRunner.Register(ScoutRunner, 'scout')
+
+m = __import__('scout')
+ScannerRunner.Register(getattr(m, 'ScoutRunner'), 'scout')
 
 if __name__ == '__main__':
-    from scanners.scout import ScoutRunner
     #test_add_site()
     pass
     # dr = DockerRunner.Create('git@github.com:CoinFabrik/scout-soroban-examples.git', 'main', 'vesting/', scanner='scout')
