@@ -128,10 +128,13 @@ No - report
     <div class="field-body">
         <div class="field">
             <div class="control">
-        <textarea class="textarea" name="tasks"
-                  rows="{{ 2+funcs.lines(content) }}">
-{{ content }}
-        </textarea>
+            {% if content==None %}
+                <input readonly class="input is-static"
+                       type="text" value="-" readonly>
+            {% else %}
+            <textarea class="textarea" name="tasks"
+              rows="{{funcs.min(50, 2+funcs.lines(content))}}">{{ funcs.repr(content) }}</textarea>
+            {% endif %}
             </div>
         </div>
     </div>
@@ -162,10 +165,9 @@ No - report
     <div class="field-body">
         <div class="field">
             <div class="control">
-        <textarea class="textarea" url='{{url}}' fname='raw-report.json' name="tasks" id="{{rndId}}"
-                  rows="{{ 2+funcs.lines(content) }}">
-{{ content }}
-        </textarea>
+        <textarea class="textarea" url='{{url}}'
+                  fname='raw-report.json' name="tasks" id="{{rndId}}"
+                  rows="{{funcs.min(50, 2+funcs.lines(content))}}">{{ content }}</textarea>
             </div>
         </div>
     </div>

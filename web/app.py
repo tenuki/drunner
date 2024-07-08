@@ -66,19 +66,25 @@ def get_exec_output(id: int):  # put application's code here
         mimetype='text/plain',
         headers={'Content-disposition': f'attachment; filename={fname}'})
 
+def split_ms(a_str:str):
+    if a_str is None: return ''
+    return a_str.split('.')[0] if '.' in a_str else a_str
+
+
+
 
 @app.route('/scan-exec/<id>')
 def scan_exec(id: int):  # put application's code here
+    scanner, repo, path, commit, _id, timestamp = 'scanner', 'repo', 'path', 'commit', "id", 'timestamp'
+    # STATICS = {_id, scanner}
     scan = ScannerExec().get_by_id(id)
     exec_fields = {}
-    for k in ["id",
-                'timestamp',
-                'repo',
-                'commit',
-                'path',
-                'scanner']:
-        exec_fields[k] = to_str(getattr(scan, k))
-
+    for k in [scanner, repo, path, commit, _id, timestamp]:
+        field_value = to_str(getattr(scan, k))
+        exec_fields[k] = (split_ms(field_value) if k==timestamp else field_value, # field_value
+                          (k == scanner), # is static
+                          'datetime-local' if k==timestamp else None, # special_field
+                          )
     big_fields = {}
     for k in ['errors']:
         big_fields[k] = to_str(getattr(scan, k))
@@ -86,7 +92,7 @@ def scan_exec(id: int):  # put application's code here
     reports = list(scan.reports)
     if len(reports)>=2:
         gen = [r for r in reports if not r.is_raw ][0]
-        print(gen)
+        # print(gen)
         # big_fields['report'] = '\r\n'.join(str(finding) for finding in json.loads(gen.content))
         lines =  [str(finding) for finding in json.loads(gen.content)['findings'] ]
         big_fields['report'] = '\r\n'.join(lines)

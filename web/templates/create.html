@@ -98,109 +98,6 @@
         </div>
     </div>
 
-
-    <div class="field is-horizontal">
-        <div class="field-label is-normal">
-            <label class="label">Add</label>
-        </div>
-        <div class="field-body">
-            <div class="field">
-                <p class="control is-expanded">
-                    <input class="input" id="repo" placeholder="repo" type="text"
-                           value="git@github.com:CoinFabrik/scout-soroban.git">
-                </p>
-            </div>
-            <div class="field">
-                <p class="control is-expanded">
-                    <input class="input is-success" id="commit" placeholder="commit" type="text" value="main">
-                </p>
-            </div>
-
-            <div class="field">
-                <p class="control is-expanded">
-                    <label class="checkbox"><input id="scout_scanner" type="checkbox" checked/>scout</label>
-                    <label class="checkbox"><input id="test_scanner" type="checkbox"/>test</label>
-                </p>
-            </div>
-        </div>
-    </div>
-
-<!--  V2 -->
-<!--    <div class="field is-horizontal">-->
-<!--        <div class="field-label is-normal">-->
-<!--            <label class="label">Add</label>-->
-<!--        </div>-->
-<!--        <div class="field-body">-->
-<!--            <div class="field">-->
-<!--                <p class="control is-expanded">-->
-<!--                    <textarea class="textarea" id="paths" name="paths"-->
-<!--                              placeholder="Paths in the repo">test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/</textarea>-->
-<!--                </p>-->
-<!--            </div>-->
-
-<!--            <div class="field">-->
-<!--                <p class="control is-expanded">-->
-<!--                    <label class="checkbox">-->
-<!--                        <input type="checkbox"/>-->
-<!--                        scout-->
-<!--                    </label>-->
-<!--                    <label class="checkbox">-->
-<!--                        <input type="checkbox"/>-->
-<!--                        test-->
-<!--                    </label>-->
-
-<!--                </p>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-<!--  V3 -->
-<!--    <div class="field is-horizontal">-->
-<!--        <div class="field-label is-normal">-->
-<!--            <label class="label">Add</label>-->
-<!--        </div>-->
-<!--        <div class="field-body">-->
-<!--            <div class="field">-->
-<!--                <p class="control is-expanded">-->
-<!--                    <input class="input" placeholder="rep" type="text"-->
-<!--                           value="git@github.com:CoinFabrik/scout-soroban.git">-->
-<!--                </p>-->
-<!--            </div>-->
-<!--            <div class="field">-->
-<!--                <p class="control is-expanded">-->
-<!--                    <input class="input is-success" placeholder="commit" type="text" value="main">-->
-<!--                </p>-->
-<!--            </div>-->
-<!--            <div class="field">-->
-<!--                <p class="control is-expanded">-->
-<!--                <div class="select is-multiple is-small">-->
-<!--                    <select multiple size="4">-->
-<!--                        <option value="scout">Scout</option>-->
-<!--                        <option value="test">Test</option>-->
-<!--                        <option value="other">other</option>-->
-<!--                    </select>-->
-<!--                </div>-->
-<!--                </p>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-
-    <div class="field is-horizontal">
-        <div class="field-label is-normal">
-            <label class="label">Paths</label>
-        </div>
-        <div class="field-body">
-            <div class="field">
-                <div class="control">
-                    <textarea class="textarea" id="paths" name="paths"
-                              placeholder="Paths in the repo">test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/</textarea>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
     <div class="field is-horizontal">
         <div class="field-label is-normal">
             <label class="label">Definitions</label>
@@ -215,6 +112,7 @@
         </div>
     </div>
 
+
     <div class="field is-horizontal">
         <div class="field-label">
             <!-- Left empty for spacing -->
@@ -227,15 +125,11 @@
                     </button>
                 </div>
 
-                <div class="control">
-                    <button type="other" onclick="generate(); return false;" class="button is-light">Add</button>
-                </div>
-
-
             </div>
         </div>
     </div>
 
+    {% include "create_dot_product.html" %}
 
 </form>
 {% endblock %}

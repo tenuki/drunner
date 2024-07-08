@@ -31,6 +31,8 @@ def lines(x):
     if x is None: return 0
     return len(x.splitlines())
 
+def strip(x):
+    return x.strip()
 
 def render(template, **kwargs):
     class Funcs: pass
@@ -46,7 +48,8 @@ def render(template, **kwargs):
         setattr(funcs, k, v)
 
     for f in [list, len, url_for, repr, type, json, enumwid,
-              short_date, mkrand, lines, reversed, max, min]:
+              short_date, mkrand, lines, reversed, max, min,
+              strip]:
         new[f.__name__] = f
         setattr(funcs, f.__name__, f)
     new['funcs'] = funcs

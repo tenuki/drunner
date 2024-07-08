@@ -1,0 +1,53 @@
+<hr/>
+
+<div class="field is-horizontal">
+    <div class="field-label is-normal">
+        <label class="label">Add</label>
+    </div>
+    <div class="field-body">
+        <div class="field">
+            <p class="control is-expanded">
+                <input class="input" id="repo" placeholder="repo" type="text"
+                       value="git@github.com:CoinFabrik/scout-soroban.git">
+            </p>
+        </div>
+        <div class="field">
+            <p class="control is-expanded">
+                <input class="input is-success" id="commit" placeholder="commit" type="text" value="main">
+            </p>
+        </div>
+
+        <div class="field">
+            <p class="control is-expanded">
+                <label class="checkbox"><input id="scout_scanner" type="checkbox" checked/>scout</label>
+                <label class="checkbox"><input id="test_scanner" type="checkbox"/>test</label>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="field is-horizontal">
+    <div class="field-label is-normal">
+        <label class="label">Paths</label>
+    </div>
+    <div class="field-body">
+        <div class="field">
+            <div class="control">
+                <textarea class="textarea" id="paths" name="paths"
+                          placeholder="Paths in the repo">test-cases/avoid-core-mem-forget/avoid-core-mem-forget-1/vulnerable-example/</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="field is-horizontal">
+    <div class="field-label">
+    </div>
+    <div class="field-body">
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="other" onclick="generate(); return false;" class="button is-light">Add</button>
+            </div>
+        </div>
+    </div>
+</div>

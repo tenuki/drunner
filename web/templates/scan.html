@@ -5,34 +5,31 @@
 
 
 {% block content %}
-      <style type='text/css'>
-   textarea {
+<style type='text/css'>
+textarea {
     white-space: nowrap;
-    overflow:    scroll;
-    overflow-y:  hidden;
-    overflow-x:  scroll;
-    overflow:    -moz-scrollbars-horizontal;
-   }
-  </style>
+    overflow:    auto;
+    overflow-y:  auto;
+    overflow-x:  auto;
+    /*overflow:    -moz-scrollbars-horizontal;*/
+}
+</style>
 <script>
     function update_progress() {
         let stop = true;
         const els = document.getElementsByTagName("progress");
         for(const el of els) {
-            console.log(`  begin 1 ---------  ${el.value} `)
             if (el.value===9999) { continue; }
             const started = Number.parseFloat(el.getAttribute("started"));
             const d = ((new Date()).valueOf()/1000);
-            console.log(`  begin 2 ---------started: ${started} /value: ${el.value} /max: ${el.max}  `)
             el.value = d-started;
-            console.log(`  begin 2 ---------d: ${d} / d-started: ${d-started}  `)
             if (el.value>=el.max) { el.value=9999;} else {stop=false;}
         }
         if(!stop) {
-            setTimeout(update_progress, 300);
+            setTimeout(update_progress, 100);
         }
     }
-    setTimeout(update_progress, 300);
+    setTimeout(update_progress, 100);
 </script>
 
 
@@ -40,7 +37,7 @@
 
 <!--<fieldset disabled>-->
 
-{% for field_name, field_value in exec_fields.items() %}
+{% for field_name, (field_value, is_static, custom_type) in exec_fields.items() %}
 <div class="field is-horizontal">
     <div class="field-label is-normal">
         <label class="label">{{ field_name}}</label>
@@ -48,10 +45,16 @@
     <div class="field-body">
         <div class="field">
             <div class="control">
-                <input class="input is-danger" id="batch" name="batch"
-                       placeholder="e.g. The friendly comparison" type="text" value="{{ field_value}}">
+                {% if custom_type %}
+                <input readonly class="input {{'is-static' if is_static else ''}}"
+                       id="batch" name="batch"
+                       type="{{custom_type}}" value="{{ field_value }}">
+                {% else %}
+                <input readonly class="input {{'is-static' if is_static else ''}}"
+                       id="batch" name="batch"
+                       type="text" value="{{ field_value }}">
+                {% endif %}
             </div>
-            {# <p class="help is-danger">This field is required</p>#}
         </div>
     </div>
 </div>
