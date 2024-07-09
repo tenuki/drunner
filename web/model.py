@@ -15,7 +15,8 @@ if os.environ.get('DBLOG', 'false').lower() == 'true':
 
 
 DB_FILE = os.environ.get("DB", os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), 'drunner.sqlite.db'))
+        os.path.dirname(os.path.abspath(__file__)),
+        os.environ.get('DB_NAME','drunner.sqlite.db')))
 # idx=0
 # while not os.path.exists(DB_FILE):
 #     print(idx)
@@ -183,7 +184,7 @@ class Execution(BaseModel):
         for c in ' :/"\'':
             cmd = cmd.replace(c, '_')
         date = short_date(self.timestamp)
-        return f'{date}-id_{id}-{cmd}.txt'
+        return f'{date}-id_{self.id}-{cmd}.txt'
 
     def get_output_info(self):
         return self.get_output_fname(), 'text/plain'
@@ -234,7 +235,7 @@ else:
 
 def get_scans():
     return [x.as_dict() for x in ScannerExec.select()
-                .where(ScannerExec.batch != None)
+                .where(ScannerExec.batch == None)
                 .order_by(ScannerExec.timestamp.desc())]
 
 

@@ -23,18 +23,18 @@ class Finding:
     desc: Optional[str]=''
 
     def as_dict(self):
-        print(repr(self.level))
-        print(repr({
-            'name': self.name,
-            'desc': self.desc,
-            'category': self.category,
-            'level': self.level,
-            # 'level': self.level.name,
-            'filename': self.filename,
-            'lineno': self.lineno,
-            'jsonextra': self.jsonextra,
-            'scanner': self.scanner.name if self.scanner is not None else '',
-        }))
+        # print(repr(self.level))
+        # print(repr({
+        #     'name': self.name,
+        #     'desc': self.desc,
+        #     'category': self.category,
+        #     'level': self.level,
+        #     # 'level': self.level.name,
+        #     'filename': self.filename,
+        #     'lineno': self.lineno,
+        #     'jsonextra': self.jsonextra,
+        #     'scanner': self.scanner.name if self.scanner is not None else '',
+        # }))
         return {
             'name': self.name,
             'desc': self.desc,
@@ -82,7 +82,7 @@ class ResultsReport:
                 'finding_count': self.finding_count,
                 'findings': [f.as_dict() for f in self.findings]
                             if self.findings is not None else []}
-        print("---> %r"%x)
+        # print("---> %r"%x)
         return x
 
     def to_json(self, indent=None):

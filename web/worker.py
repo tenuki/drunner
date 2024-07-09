@@ -19,7 +19,9 @@ def add_line(ex, is_out, idx, line):
     OutputLine.Create(ex, is_out, idx, line)
 
 
-def db_save(q, debug=False):
+def db_save(q, debug=None):
+    if debug is None:
+        debug = os.environ.get('DEBUG', 'false').lower()=='true'
     tot = 0
     done = False
     while not done:
@@ -37,7 +39,7 @@ def db_save(q, debug=False):
                     tot += len(lines[idx:idx + BSIZE])
                     if debug:
                         for line in lines[idx:idx+BSIZE]:
-                            print(f" -> {line} ")
+                            if debug: print(f" -> {line} ")
     if debug:
         print(f"LINES->{tot}")
 
@@ -77,7 +79,7 @@ def launch_thread(*args):
         thread.join()
 
 
-def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=True) -> Execution:
+def _exec(ex: Execution, cmdargs, wd='.', env=None, debug=None) -> Execution:
     if not (env is None):
         base = os.environ.copy()
         base.update(env)

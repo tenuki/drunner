@@ -60,7 +60,7 @@ class ScoutRunner(ScannerRunner):
             date=self.m.timestamp,
             composite=False,
             scanners=[self.m.scanner])
-        for vuln in self._vulns_from_raw_report(raw_report):
+        for vuln in self._get_vulns_from_raw_report(raw_report):
             report.addFinding(vuln)
         return report
 

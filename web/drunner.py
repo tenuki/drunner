@@ -116,9 +116,9 @@ class ScannerRunner(object):
 
     def prepare_image(self):
         """
-        tmpdir\
-          +- srcs\       // dir with the checkout
-          +- out\       // dir for the output
+        tmpdir\\
+          +- srcs\\        // dir with the checkout
+          +- out\\        // dir for the output
 
         - tmpdir is expected to be mounted somewhere in the container
         """

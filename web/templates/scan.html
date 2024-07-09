@@ -5,15 +5,6 @@
 
 
 {% block content %}
-<style type='text/css'>
-textarea {
-    white-space: nowrap;
-    overflow:    auto;
-    overflow-y:  auto;
-    overflow-x:  auto;
-    /*overflow:    -moz-scrollbars-horizontal;*/
-}
-</style>
 <script>
     function update_progress() {
         let stop = true;
@@ -21,7 +12,7 @@ textarea {
         for(const el of els) {
             if (el.value===9999) { continue; }
             const started = Number.parseFloat(el.getAttribute("started"));
-            const d = ((new Date()).valueOf()/1000);
+            const d = (new Date()).valueOf()/1000;
             el.value = d-started;
             if (el.value>=el.max) { el.value=9999;} else {stop=false;}
         }
@@ -113,12 +104,12 @@ textarea {
         <div class="field-body">
             <div class="field">
                 <div class="control">
-        <textarea id="{{ rndId }}" readonly  wrap="off"
+        <textarea id="{{ rndId }}" readonly
                   url="{{url_for('get_exec_output', id=exec.id)}}"
                   fname="{{exec.get_output_fname()}}"
                   class="textarea is-family-code"
                   rows="{{min(50, 1+len(exec.output_line))}}"
-                  style="white-space: nowrap;  overflow: auto;"
+                  {#style="white-space: nowrap;  overflow: auto;"#}
         >{%- for line in exec.output_line -%}
 {{ line.line+"\r\n" }}
 {%- endfor -%}</textarea>

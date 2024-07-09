@@ -16,6 +16,8 @@ REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 redis_broker = RedisBroker(host=REDIS_HOST)
 dramatiq.set_broker(redis_broker)
 
+def get_app():
+    return app
 
 @app.route('/')
 def index():  # put application's code here
