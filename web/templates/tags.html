@@ -133,7 +133,7 @@ No - report
                        type="text" value="-" readonly>
             {% else %}
             <textarea class="textarea" name="tasks"
-              rows="{{funcs.min(50, 2+funcs.lines(content))}}">{{ funcs.repr(content) }}</textarea>
+              rows="{{funcs.min(50, 2+funcs.lines(content))}}">{{ content }}</textarea>
             {% endif %}
             </div>
         </div>
