@@ -4,7 +4,29 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List
 
-Priority = Enum('Priority', ['High', 'Medium', 'Low', 'Enhancement'])
+#Priority = Enum('Priority', ['High', 'Medium', 'Low', 'Enhancement'])
+import json
+from enum import Enum
+
+
+class Priority(str, Enum):
+    High = 'High'
+    Medium = 'Medium'
+    Low = 'Low'
+    Enhancement = 'Enhancement'
+
+    @classmethod
+    def FromStr(cls, priority_str: str) -> "Priority":
+        match priority_str.lower():
+            case "high":
+                return cls.High
+            case "medium":
+                return cls.Medium
+            case "low":
+                return cls.Low
+            case "enhancement":
+                return cls.Enhancement
+        raise ValueError(f"Invalid priority string: {priority_str}")
 
 
 @dataclass
@@ -39,7 +61,7 @@ class Finding:
             'name': self.name,
             'desc': self.desc,
             'category': self.category,
-            'level': self.level,
+            'level': Priority.FromStr(self.level),
             # 'level': self.level.name,
             'filename': self.filename,
             'lineno': self.lineno,
@@ -125,3 +147,6 @@ class SrcExtra:
 
     def as_dict(self):
         return {'filename': self.filename, 'manifest': self.manifest}
+
+if __name__=="__main__":
+    pass  # print(Priority.FromStr("Medium"))
