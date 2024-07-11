@@ -41,7 +41,10 @@ class BatchExec(BaseModel):
     def composite_report(self):
         vulns = []
         for scan in self.scans:
-            for vuln in scan.get_common_report().findings:
+            rep = scan.get_common_report()
+            if rep is None:
+                continue
+            for vuln in rep.findings:
                 vulns.append((scan, vuln))
         return vulns
 
