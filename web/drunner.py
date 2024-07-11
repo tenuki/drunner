@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import tempfile
 import traceback
@@ -76,6 +77,12 @@ class ScannerRunner(object):
         return model.Execution.Create('custom-update-'+cls.__name__,
                                     [f'docker pull {cls.IMAGE}'])
 
+    @classmethod
+    def FromId(cls, id: int):
+        scan = model.ScannerExec().get_by_id(id)
+        klass = cls.Get(scan.scanner)
+        return klass(scan)
+
     def __init__(self, m: model.ScannerExec):
         self.path = m.path
         self.commit = m.commit
@@ -101,6 +108,20 @@ class ScannerRunner(object):
         report = self.process_report(raw_report)
         model.Report.Create(docker=self.m, is_raw=False, content=report.to_json())
         return report
+
+    def rebuild(self):
+        raw_rep = self.m.get_raw_report()
+        if raw_rep is None:
+            return
+        report = self.process_report(raw_rep.content)
+        rep = self.m.get_common_report()
+        if rep is None:
+            model.Report.Create(docker=self.m, is_raw=False,
+                                content=report.to_json())
+        else:
+            rep.content = report.to_json()
+            rep.save()
+
 
     @property
     def output_fname(self):

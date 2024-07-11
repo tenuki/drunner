@@ -4,10 +4,10 @@
 
 {% macro link_scan(scan) -%}
     <a href="{{url_for('scan_exec', id=scan.id)}}">{{ caller(scan) }}</a>
-    {# if scan.report==None %}
+    {# if scan.get_common_report()==None %}
         {{ caller(scan) }}
     {% else %}
-        <a href="{{url_for('report', id=scan.report.id)}}">{{ caller(scan) }}</a>
+        <a href="{{url_for('report', id=scan.get_common_report().id)}}">{{ caller(scan) }}</a>
     {% endif #}
 {%- endmacro %}
 
@@ -15,6 +15,12 @@
 {% block content %}
 
 {{ tags.batchhead(batch) }}
+
+<div class="box">
+    {{ tags.generic_report_findings(
+        batch.composite_report(),True,batch) }}
+</div>
+
 <table class="table is-striped is-hoverable is-fullwidth">
     <thead>
     <tr>
@@ -32,7 +38,6 @@
     {% for scan in batch.scans %}
 
     <tr>
-            {# scan.id,  #}
             {% for value in [scan.repo, scan.commit, scan.path, scan.scanner] %}
             <td>
                 {% call(inner) link_scan(scan) %}
@@ -40,37 +45,12 @@
                 {% endcall %}
             </td>
             {% endfor %}
-
-<!--            <th>-->
-<!--                {% call(inner) link_scan(scan) %}-->
-<!--                    {{inner.id}}-->
-<!--                {% endcall %}-->
-<!--            </th>-->
-<!--            <td>-->
-<!--                {% call(inner) link_scan(scan) %}-->
-<!--                    {{inner.repo}}-->
-<!--                {% endcall %}-->
-<!--            </td>-->
-<!--            <td>-->
-<!--                {% call(inner) link_scan(scan) %}-->
-<!--                    {{inner.commit}}-->
-<!--                {% endcall %}-->
-<!--            </td>-->
-<!--            <td>-->
-<!--                {% call(inner) link_scan(scan) %}-->
-<!--                    {{inner.path}}-->
-<!--                {% endcall %}-->
-<!--            </td>-->
-<!--            <td>-->
-<!--                {% call(inner) link_scan(scan) %}-->
-<!--                    {{inner.scanner}}-->
-<!--                {% endcall %}-->
-<!--            </td>-->
             <td>
                 {% call(inner) link_scan(scan) %}
-                <abbr title="{{scan.report.vulnlist}}">
-                    {% if inner.report!=None %}
-                    {{ tags.vulntag(inner.scanner, inner.report.vulnstats) }}
+                <abbr title="{{scan.get_common_report().vulnlist}}">
+                    {% if inner.get_common_report()!=None %}
+                    {{ tags.vulntag(inner.scanner,
+                                inner.get_common_report().vulnstats) }}
                     {% endif %}
                 </abbr>
                 {% endcall %}

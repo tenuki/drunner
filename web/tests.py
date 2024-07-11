@@ -22,6 +22,7 @@ class TestPriorities(unittest.TestCase):
         json.dumps(Priority.FromStr("high"))
         self.assertEqual(json.loads(json.dumps(Priority.FromStr("hIGH"))), Priority.FromStr("hIGH"))
 
+
 class MyRegressionTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

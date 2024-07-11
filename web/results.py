@@ -1,10 +1,8 @@
 import json
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Union
 
-#Priority = Enum('Priority', ['High', 'Medium', 'Low', 'Enhancement'])
 import json
 from enum import Enum
 
@@ -16,11 +14,19 @@ class Priority(str, Enum):
     Enhancement = 'Enhancement'
 
     @classmethod
+    def From(cls, priority: Union[str,"Priority"]) ->"Priority":
+        if isinstance(priority, str):
+            return Priority.FromStr(priority)
+        return priority
+
+    @classmethod
     def FromStr(cls, priority_str: str) -> "Priority":
         match priority_str.lower():
             case "high":
                 return cls.High
             case "medium":
+                return cls.Medium
+            case "warning":
                 return cls.Medium
             case "low":
                 return cls.Low
@@ -28,6 +34,17 @@ class Priority(str, Enum):
                 return cls.Enhancement
         raise ValueError(f"Invalid priority string: {priority_str}")
 
+    def toString(self):
+        match self:
+            case Priority.High:
+                return "High"
+            case Priority.Medium:
+                return "Medium"
+            case Priority.Low:
+                return "Low"
+            case Priority.Enhancement:
+                return "Enhancement"
+        raise ValueError(f"Invalid priority string: {self}")
 
 @dataclass
 class Scanner:
@@ -45,24 +62,11 @@ class Finding:
     desc: Optional[str]=''
 
     def as_dict(self):
-        # print(repr(self.level))
-        # print(repr({
-        #     'name': self.name,
-        #     'desc': self.desc,
-        #     'category': self.category,
-        #     'level': self.level,
-        #     # 'level': self.level.name,
-        #     'filename': self.filename,
-        #     'lineno': self.lineno,
-        #     'jsonextra': self.jsonextra,
-        #     'scanner': self.scanner.name if self.scanner is not None else '',
-        # }))
         return {
             'name': self.name,
             'desc': self.desc,
             'category': self.category,
-            'level': Priority.FromStr(self.level),
-            # 'level': self.level.name,
+            'level': Priority.From(self.level).toString(),
             'filename': self.filename,
             'lineno': self.lineno,
             'jsonextra': self.jsonextra,

@@ -52,7 +52,7 @@
 {% endfor %}
 
 <div class="box">
-    {{ tags.generic_report(scan.report) }}
+    {{ tags.generic_report(scan.get_common_report()) }}
 </div>
 
 {% for rndId, exec in reversed(list(enumwid(scan.execs))) %}

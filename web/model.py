@@ -17,11 +17,6 @@ if os.environ.get('DBLOG', 'false').lower() == 'true':
 DB_FILE = os.environ.get("DB", os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
         os.environ.get('DB_NAME','drunner.sqlite.db')))
-# idx=0
-# while not os.path.exists(DB_FILE):
-#     print(idx)
-#     idx+=1
-#     time.sleep(1)
 db = SqliteDatabase(DB_FILE)
 
 
@@ -42,6 +37,13 @@ class BatchExec(BaseModel):
 
     def __str__(self):
         return f'<{self.id}: {self.name} / {self.author} / {self.email} / {self.comments[:20]}>'
+
+    def composite_report(self):
+        vulns = []
+        for scan in self.scans:
+            for vuln in scan.get_common_report().findings:
+                vulns.append((scan, vuln))
+        return vulns
 
 
 class ScannerExec(BaseModel):
@@ -71,19 +73,17 @@ class ScannerExec(BaseModel):
             'scanner': self.scanner,
             'errors': self.errors,}
 
-    @property
-    def report(self):
-        reps = [r for r in self.reports if not r.is_raw]
-        if len(reps) == 0:
+    def get_common_report(self):
+        try:
+            return Report.select().where(Report.docker==self, Report.is_raw==False)[0]
+        except IndexError:
             return None
-        return reps[0]
 
-    @property
-    def raw_report(self):
-        reps = [r for r in self.reports if r.is_raw]
-        if len(reps) == 0:
+    def get_raw_report(self):
+        try:
+            return Report.select().where(Report.docker==self, Report.is_raw==True)[0]
+        except IndexError:
             return None
-        return reps[0]
 
 
 class PrioritySum:
@@ -134,6 +134,8 @@ class Report(BaseModel):
     @property
     def vulnstats(self):
         d = self.data
+        # for f in d['findings']:
+        #     print(repr(f['level']))
         found = defaultdict(int)
         for vuln in d['findings']:
             found[vuln['level']]+=1

@@ -16,8 +16,10 @@ REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
 redis_broker = RedisBroker(host=REDIS_HOST)
 dramatiq.set_broker(redis_broker)
 
+
 def get_app():
     return app
+
 
 @app.route('/')
 def index():  # put application's code here
@@ -34,6 +36,26 @@ def exec(eid: int):  # put application's code here
                   big_fields={
                       'output': '\r\n'.join(line.line
                                             for line in lines)})
+
+@app.route('/batch/<id>/composite')
+def batch_composite(id: int):  # put application's code here
+    batch = BatchExec().get_by_id(id)
+    full = []
+    for scan, finding in batch.composite_report():
+        full.append(','.join([
+            finding['scanner'],
+            scan.repo,
+            scan.path,
+            finding['name'],
+            finding['level'],
+            finding['filename']+":"+str(finding['lineno'])
+        ]))
+    return Response(
+        '\r\n'.join(full),
+        mimetype='text/plain',
+        headers={'Content-disposition':
+                     f'attachment; filename=batch-{batch.name}-{id}.csv'})
+
 
 @app.route('/batch/<id>')
 def batch(id: int):  # put application's code here
@@ -68,11 +90,17 @@ def get_exec_output(id: int):  # put application's code here
         mimetype='text/plain',
         headers={'Content-disposition': f'attachment; filename={fname}'})
 
+
 def split_ms(a_str:str):
     if a_str is None: return ''
     return a_str.split('.')[0] if '.' in a_str else a_str
 
 
+@app.route('/scan/<scan_id>/rebuild')
+def rebuild(scan_id: int):
+    scan = ScannerRunner.FromId(scan_id)
+    scan.rebuild()
+    return redirect(url_for('scan_exec', id=scan_id))
 
 
 @app.route('/scan-exec/<id>')
@@ -126,6 +154,7 @@ def build(scanner: str):
         return redirect(url_for('exec', eid=e.id), code=302)
     return render('build_test.html', scanner=scanner, action='build')
 
+
 @app.route('/update/<scanner>', methods=['GET', 'POST'])
 def update(scanner: str):
     if request.method == 'POST':
@@ -166,6 +195,14 @@ def create():
 @app.route('/api/scans/all', methods=('GET',))
 def scans():
     return get_scans()
+
+
+@app.route('/rebuild_reports', methods=('GET',))
+def rebuild_reports():
+    for scan in ScannerExec.select():
+        scanner = ScannerRunner.FromId(scan.id)
+        scanner.rebuild()
+    return redirect('/')
 
 
 # @dramatiq.actor

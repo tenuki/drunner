@@ -1,5 +1,6 @@
 <div class="buttons">
-    {% for _str,link_button, btn_type, extra in [
+    {% for _str, link_button, btn_type, extra in [
+        ('Rebuild Reports', 'rebuild_reports', 'link', {}),
         ('Update Scout', 'update', 'link', {'scanner':'scout'}),
         ('Add Repo Key', 'addsite', 'danger', {}),
         ('Build Test', 'build', 'danger', {'scanner':'test'}),

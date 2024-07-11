@@ -43,14 +43,10 @@ class ScoutRunner(ScannerRunner):
     def _get_vulns_from_raw_report(raw_report):
         for line in raw_report.splitlines():
             try:
-                # disable: unsafe-unwrap
                 msg = json.loads(line)
                 sv = ScoutVulnerability.FromJsonObj(msg)
                 if sv is None: continue
                 yield sv.asFinding()
-                # report.addFinding(Finding(name=msg['message']['message'], category='',
-                #         level=Priority.Medium,
-                #         scanner=self.m.scanner))
             except:
                 print(f"Invalid line in output: '{line}'. ignoring..", file=sys.stderr)
 
@@ -85,7 +81,7 @@ class ScoutVulnerability:
             name=self.code,
             desc=self.message,
             category=self.category,
-            level=self.level,
+            level=Priority.From(self.level),
             filename=self.src_path,
             lineno=self.src_line,
             scanner=Scanner('scout'),
@@ -117,7 +113,7 @@ if __name__=="__main__":
     # show some
     scan = ScannerExec.get_by_id(14)
     sr = ScoutRunner(scan)
-    rr = scan.raw_report
+    rr = scan.get_raw_report()
     for v in ScoutRunner._get_vulns_from_raw_report(rr.content):
         print(v)
     rep = sr.process_report(rr.content)

@@ -79,6 +79,61 @@
 {%- endmacro %}
 
 
+{% macro generic_report_findings(findings, includeRepo=False, batch=None) %}
+    <table class="table is-striped is-hoverable is-fullwidth">
+      <thead>
+        <tr>
+          <th>Scanner</th>
+            {% if includeRepo %}
+            <th>Repo</th>
+            <th>Contract</th>
+            {% endif %}
+{#          <th>Category</th>#}
+          <th>Name</th>
+          <th>Level</th>
+          <th>Filename
+
+          {% if includeRepo %}
+    <a class="button is-small is-responsive is-info is-dark"
+       href="{{ url_for('batch_composite', id=batch.id) }}">
+        download
+    </a>
+          {% endif %}
+
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+
+    {% if includeRepo %}
+        {% for scan,finding in findings %}
+            <tr>
+              <th>{{finding.scanner}}</th>
+              <th>{{scan.repo}}</th>
+              <th>{{scan.path}}</th>
+              <td>{{finding.name}}</td>
+              <td>{{finding.level}}</td>
+              <td>{{finding.filename}}:{{finding.lineno}}</td>
+            </tr>
+        {% endfor %}
+
+    {% else %}
+        {% for finding in findings %}
+            <tr>
+              <th>{{finding.scanner}}</th>
+              <td>{{finding.name}}</td>
+              <td>{{finding.level}}</td>
+              <td>{{finding.filename}}:{{finding.lineno}}</td>
+            </tr>
+        {% endfor %}
+    {% endif %}
+
+
+      </tbody>
+    </table>
+{%- endmacro %}
+
+
 {% macro generic_report(report) -%}
 {% if report==None %}
 No - report
@@ -88,29 +143,7 @@ No - report
     {{ report.data['scanners'] }}<br/>
     {{ report.data['composite'] }}<br/>
     <br/>
-
-    <table class="table is-striped is-hoverable is-fullwidth">
-      <thead>
-        <tr>
-          <th>Scanner</th>
-          <th>Category</th>
-          <th>Name</th>
-          <th>Level</th>
-          <th>Filename</th>
-        </tr>
-      </thead>
-      <tbody>
-    {% for finding in report.findings %}
-        <tr>
-          <th>{{finding.scanner}}</th>
-          <td>{{finding.category}}</td>
-          <td>{{finding.name}}</td>
-          <td>{{finding.level}}</td>
-          <td>{{finding.filename}}:{{finding.lineno}}</td>
-        </tr>
-    {% endfor %}
-      </tbody>
-    </table>
+    {{ generic_report_findings(report.findings)  }}
 {% endif %}
 
 {%- endmacro %}
