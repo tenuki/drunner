@@ -102,7 +102,7 @@ class ScoutVulnerability:
             code=json_obj['message']['code']['code'],
             level=json_obj['message']['level'],
             spans=[SpanObject.FromJsonObj(o) for o in json_obj['message']['spans']],
-            src_path=json_obj['target']['src_path'],
+            src_path=json_obj['message']['spans'][0]['file_name'],
             src_line=json_obj['message']['spans'][0]['line_start'],
             src_extra=SrcExtra(
                 filename=json_obj['message']['spans'][0]['file_name'],
