@@ -1,16 +1,25 @@
 {% extends "base.html" %}
-
 {% block title %}Create Batch{% endblock %}
-
 {% block content %}
-<h1>Create Batch</h1>
 <script>
     function doblesplit(st) {
         if (st.indexOf(',')>=0) { return st.split(','); }
         if (st.indexOf('\r\n')>=0) { return st.split('\r\n'); }
         return [st];
     }
-    function generate() {
+    function update_enqueue_button_state() {
+        var btn = document.getElementById("enqueue");
+        const current = document.getElementById('tasks').value;
+        console.log(`state: "${current}" / ${current===""}`);
+        //btn.disabled = current==="";
+    }
+    function reset() {
+        //alert("reset()");
+        document.getElementById('tasks').value = "";
+        update_enqueue_button_state();
+    }
+    function generate(_reset) {
+        //alert("generate("+ _reset+ ")");
         //event.preventDefault();
         var scanners = [];
         const el_repo = document.getElementById("repo");
@@ -35,12 +44,22 @@
                 }
             }
         }
-        document.getElementById('tasks').value = batch.join('\r\n');
+        console.log("reseT:", _reset);
+        if (_reset) {
+            reset();
+        }
+        const newline = '\r\n';
+        const current = document.getElementById('tasks').value;
+        const newdefs = batch.join(newline);
+        document.getElementById('tasks').value = current===""?newdefs:(current+newline+newdefs);
+        update_enqueue_button_state();
     }
 </script>
 
-<form method="post">
+<h1 class="subtitle is-4">Create a new batch</h1>
+<h1 class="subtitle is-5 has-text-centered">Batch to execute</h1>
 
+<form method="post">
     <div class="field is-horizontal">
         <div class="field-label is-normal">
             <label class="label">Name</label>
@@ -48,10 +67,9 @@
         <div class="field-body">
             <div class="field">
                 <div class="control">
-                    <input class="input is-danger" id="batch"
-                           name="batch" placeholder="e.g. The friendly comparison" type="text">
+                    <input class="input" id="batch"
+                           name="batch" placeholder="batch's name" type="text">
                 </div>
-                {# <p class="help is-danger">This field is required</p>#}
             </div>
         </div>
     </div>
@@ -72,14 +90,10 @@
             </div>
             <div class="field">
                 <p class="control is-expanded has-icons-left has-icons-right">
-                    <input class="input is-success" name="email" placeholder="Email" type="email"
+                    <input class="input" name="email" placeholder="Email" type="email"
                            value="drunner@coinfabrik.com">
-                    <span class="icon is-small is-left">
-          <i class="fas fa-envelope"></i>
-        </span>
-                    <span class="icon is-small is-right">
-          <i class="fas fa-check"></i>
-        </span>
+                    <span class="icon is-small is-left"><i class="fas fa-envelope"></i></span>
+                    <span class="icon is-small is-right"><i class="fas fa-check"></i></span>
                 </p>
             </div>
         </div>
@@ -92,7 +106,7 @@
         <div class="field-body">
             <div class="field">
                 <div class="control">
-                    <textarea class="textarea" name="comments" placeholder="Explain how we can help you"></textarea>
+                    <textarea class="textarea" name="comments" placeholder="add comments to execution"></textarea>
                 </div>
             </div>
         </div>
@@ -120,16 +134,20 @@
         <div class="field-body">
             <div class="field is-grouped">
                 <div class="control">
-                    <button class="button is-primary">
-                        Submit
-                    </button>
+                    <button id="enqueue" class="button is-primary">Enqueue</button>
                 </div>
-
+                <div class="control">
+                    <button type="other" onclick="reset(); return false;" class="button is-warning">Reset definitions</button>
+                </div>
             </div>
         </div>
     </div>
 
-    {% include "create_dot_product.html" %}
+    <br/>
+    <div class="box">
+        <h1 class="subtitle is-5 has-text-centered">Generate test combinations</h1>
+        {% include "create_dot_product.html" %}
+    </div>
 
 </form>
 {% endblock %}

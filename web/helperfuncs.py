@@ -34,6 +34,10 @@ def lines(x):
 def strip(x):
     return x.strip()
 
+def float_to_seconds(x, unit='s'):
+    if x is None: return "-"
+    return "{:.2f}{unit}".format(x, unit=unit)
+
 def render(template, **kwargs):
     class Funcs: pass
     funcs = Funcs()
@@ -49,7 +53,7 @@ def render(template, **kwargs):
 
     for f in [list, len, url_for, repr, type, json, enumwid,
               short_date, mkrand, lines, reversed, max, min,
-              strip]:
+              strip, float_to_seconds]:
         new[f.__name__] = f
         setattr(funcs, f.__name__, f)
     new['funcs'] = funcs

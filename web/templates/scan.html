@@ -65,36 +65,31 @@
         <div class="field-body">
             <div class="field">
                 <div class="control is-expanded">
-                    <input readonly class="input is-static" type="text" value="{{ ' '.join(json.loads(exec.cmdargs)) }}">
+                    <abbr title="{{ ' '.join(json.loads(exec.cmdargs)) +' took: '+ float_to_seconds(exec.duration) }}">
+                        <input readonly class="input is-static" type="text" value="{{ ' '.join(json.loads(exec.cmdargs)) }}">
+                    </abbr>
                 </div>
             </div>
-            {% if exec.duration==None %}
-                    <div class="field">
-                        <div class="control is-expanded">
-                            <input readonly style="max-width:70px"  class="input" type="text" value="{{ exec.elapsed() }}">
-                        </div>
-                    </div>
-                    <div class="field">
-                        <div class="control is-expanded">
-                                <progress id="progress-{{exec.id}}" class="progress is-info" started="{{exec.timestamp.timestamp()}}"
-                                      value="0" max="{{exec.avg_duration()}}">-</progress>
-                        </div>
-                    </div>
-                    <div class="field">
-                        <div class="control is-expanded">
-                            <input style="max-width:70px" class="input" type="text" value="{{ exec.avg_duration() }}">
-                        </div>
-                    </div>
-            {% else %}
-                    <div class="field">
-                        <div class="control is-expanded">
-                            <input readonly size="10"
-                                   class="input is-static" type="text" value="{{ exec.duration }} sec" readonly>
-                        </div>
-                    </div>
-            {% endif %}
         </div>
     </div>
+
+    {% if exec.duration==None %}
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label"></label>
+        </div>
+        <div class="field-body">
+            <div class="field">
+                <div class="control is-expanded">
+                    <abbr title="{{ float_to_seconds(exec.elapsed()) +' of: '+ float_to_seconds(exec.avg_duration()) }}">
+                        <progress id="progress-{{exec.id}}" class="progress is-info" started="{{exec.timestamp.timestamp()}}"
+                              value="0" max="{{exec.avg_duration()}}">-</progress>
+                    </abbr>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="field is-horizontal">
         <div class="field-label is-normal">
