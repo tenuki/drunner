@@ -49,7 +49,7 @@ def batch_composite(id: int):  # put application's code here
     batch = BatchExec().get_by_id(id)
     full = [','.join([
         'scanner',
-        's.version',
+        #'s.version',
         'repo name',
         'repo url',
         'commit',
@@ -63,7 +63,7 @@ def batch_composite(id: int):  # put application's code here
     for scan, finding in batch.composite_report():
         full.append(','.join([
             finding['scanner'],
-            scan.scanner_version,
+            #scan.scanner_version,
             last_path_no_dot(scan.repo),
             scan.repo,
             scan.commit,
