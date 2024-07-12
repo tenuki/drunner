@@ -37,18 +37,42 @@ def exec(eid: int):  # put application's code here
                       'output': '\r\n'.join(line.line
                                             for line in lines)})
 
+def last_path_no_dot(astr: str) -> str:
+    if '/' in astr:
+        astr = astr.split('/')[-1]
+    if '.' in astr:
+        astr = astr.split('.')[0]
+    return astr
+
 @app.route('/batch/<id>/composite')
 def batch_composite(id: int):  # put application's code here
     batch = BatchExec().get_by_id(id)
-    full = []
+    full = [','.join([
+        'scanner',
+        's.version',
+        'repo name',
+        'repo url',
+        'commit',
+        'revision',
+        'path',
+        'finding',
+        'level',
+        'filename',
+        'lineno'
+    ])]
     for scan, finding in batch.composite_report():
         full.append(','.join([
             finding['scanner'],
+            scan.scanner_version,
+            last_path_no_dot(scan.repo),
             scan.repo,
+            scan.commit,
+            scan.rev_hash,
             scan.path,
             finding['name'],
             finding['level'],
-            finding['filename']+":"+str(finding['lineno'])
+            finding['filename'],
+            str(finding['lineno'])
         ]))
     return Response(
         '\r\n'.join(full),
@@ -122,8 +146,6 @@ def scan_exec(id: int):  # put application's code here
     reports = list(scan.reports)
     if len(reports)>=2:
         gen = [r for r in reports if not r.is_raw ][0]
-        # print(gen)
-        # big_fields['report'] = '\r\n'.join(str(finding) for finding in json.loads(gen.content))
         lines =  [str(finding) for finding in json.loads(gen.content)['findings'] ]
         big_fields['report'] = '\r\n'.join(lines)
 
