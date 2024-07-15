@@ -29,13 +29,11 @@ def index():  # put application's code here
 @app.route('/exec/<eid>')
 def exec(eid: int):  # put application's code here
     exec = Execution().get_by_id(eid)
-    lines = [line for line in exec.output_line]
-    lines.sort(key=lambda line: line.idx)
-    return render("scan.html",
+    # lines = [line for line in exec.output_line]
+    # lines.sort(key=lambda line: line.idx)
+    return render("exec.html",
                   exec_fields={},
-                  big_fields={
-                      'output': '\r\n'.join(line.line
-                                            for line in lines)})
+                  exec=exec)
 
 def last_path_no_dot(astr: str) -> str:
     if '/' in astr:

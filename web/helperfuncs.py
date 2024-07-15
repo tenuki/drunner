@@ -23,6 +23,7 @@ def short_date(d):
         print("source d: %r" % repr(d) )
         return str(d).split('.')[0]
 
+
 def mkrand():
     return str(random()).split('.')[1]
 
@@ -31,22 +32,27 @@ def lines(x):
     if x is None: return 0
     return len(x.splitlines())
 
+
 def strip(x):
     return x.strip()
+
 
 def float_to_seconds(x, unit='s'):
     if x is None: return "-"
     return "{:.2f}{unit}".format(x, unit=unit)
 
+
 def render(template, **kwargs):
     class Funcs: pass
     funcs = Funcs()
-
+    now = datetime.datetime.now()
     new = {'scans': get_scans(),
            'batchs': get_batchs(),
            'None': None,
            'short_repo':lambda x: '../'+x.rsplit('/', 1)[1].replace('.git', ''),
            'datetime': datetime.datetime,
+           'now': now,
+           'nowts': now.timestamp(),
            }
     for k, v in new.items():
         setattr(funcs, k, v)

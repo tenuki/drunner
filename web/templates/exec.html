@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import 'tags.html' as tags %}
+
+{% block title %}Scan{% endblock %}
+
+
+{% block content %}
+<script>
+    function update_progress() {
+        let stop = true;
+        const els = document.getElementsByTagName("progress");
+        for(const el of els) {
+            if (el.value===9999) { continue; }
+            const started = Number.parseFloat(el.getAttribute("started"));
+            const d = (new Date()).valueOf()/1000;
+            el.value = d-started;
+            if (el.value>=el.max) { el.value=9999;} else {stop=false;}
+        }
+        if(!stop) {
+            setTimeout(update_progress, 100);
+        }
+    }
+    setTimeout(update_progress, 100);
+</script>
+
+
+<h1>Command execution</h1>
+
+<!--<fieldset disabled>-->
+{% set rndId = 'it worked' %}
+
+{% include "_exec.jinja" %}
+
+{% endblock %}

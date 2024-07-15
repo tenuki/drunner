@@ -1,0 +1,61 @@
+<div class="box">
+
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label">Command</label>
+        </div>
+        <div class="field-body">
+            <div class="field">
+                <div class="control is-expanded">
+                    <abbr title="{{ ' '.join(json.loads(exec.cmdargs)) +' took: '+ float_to_seconds(exec.duration) }}">
+                        <input readonly class="input is-static" type="text" value="{{ ' '.join(json.loads(exec.cmdargs)) }}">
+                    </abbr>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if exec.duration==None %}
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label"></label>
+        </div>
+        <div class="field-body">
+            <div class="field">
+                <div class="control is-expanded">
+                    <abbr title="{{ float_to_seconds(exec.elapsed()) +' of: '+ float_to_seconds(exec.avg_duration()) }}">
+                        <progress id="progress-{{exec.id}}"
+                                  class="progress is-info"
+                                  started="{{exec.timestamp.timestamp() if exec.timestamp else nowts}}"
+                                  value="0"
+                                  max="{{exec.avg_duration()}}">-</progress>
+                    </abbr>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="field is-horizontal">
+        <div class="field-label is-normal">
+            <label class="label">Output</label>
+            {{ tags.form_ta_buttons(rndId) }}
+        </div>
+        <div class="field-body">
+            <div class="field">
+                <div class="control">
+<textarea id="{{ rndId }}" readonly
+          url="{{url_for('get_exec_output', id=exec.id)}}"
+          fname="{{exec.get_output_fname()}}"
+          class="textarea is-family-code"
+          rows="{{min(50, 1+len(exec.output_line))}}"
+          {#style="white-space: nowrap;  overflow: auto;"#}
+>{%- for line in exec.output_line -%}
+{{ line.line+"\r\n" }}
+{%- endfor -%}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
