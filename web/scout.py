@@ -23,16 +23,26 @@ class ScoutRunner(ScannerRunner):
         ex.scan.scanner_version = self.version = ex.output
         ex.scan.save()
 
+    def is_version(self, version):
+        return self.version.endswith(version)
+
     def is_v0_2_10(self):
-        return self.version.endswith('0.2.10')
+        return self.is_version('0.2.10')
+
+    def is_v0_2_16(self):
+        return self.is_version('0.2.16')
+
+    def get_format(self):
+        format_name = 'json' if self.is_v0_2_10() else 'raw-json'
+        format_switch = '--output-format' if not self.is_v0_2_16() else '--output-formats'
+        return f' {format_switch} {format_name}'
 
     def run_image(self):
         self._get_version()
-        format_name = 'json' if self.is_v0_2_10() else 'raw-json'
         env = {
             'INPUT_TARGET': f'/scoutme/srcs/{self.path}',
             'RUST_BACKTRACE': 'full',
-            'INPUT_SCOUT_ARGS': f" --output-format {format_name} --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}",
+            'INPUT_SCOUT_ARGS': self.get_format() + f" --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}",
             'CARGO_TARGET_DIR': '/tmp',
         }
         envs = ' '.join(f'-e {key}="{value}"' for key, value in env.items())
