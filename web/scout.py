@@ -4,11 +4,11 @@ import sys
 from dataclasses import dataclass
 from typing import List
 
+import semver
+
 from drunner import ScannerRunner
-from results import ResultsReport, Finding, Priority, Scanner, SpanObject, SrcExtra
-
 from model import ScannerExec
-
+from results import ResultsReport, Finding, Priority, Scanner, SpanObject, SrcExtra
 
 ScoutCodeCategories = {}
 
@@ -34,7 +34,7 @@ class ScoutRunner(ScannerRunner):
 
     def get_format(self):
         format_name = 'json' if self.is_v0_2_10() else 'raw-json'
-        format_switch = '--output-format' if not self.is_v0_2_16() else '--output-formats'
+        format_switch = '--output-format' if (not self.is_v0_2_16()) or (os.environ.get('FIXEDv0216')=='true') else '--output-formats'
         return f' {format_switch} {format_name}'
 
     def run_image(self):
@@ -72,6 +72,7 @@ class ScoutRunner(ScannerRunner):
 
 ScannerRunner.Register(ScoutRunner, 'scout')
 
+
 @dataclass
 class ScoutVulnerability:
     message: str
@@ -102,7 +103,15 @@ class ScoutVulnerability:
         )
 
     @classmethod
-    def FromJsonObj(cls, json_obj):
+    def FromJsonObj(cls, version, json_obj):
+        version = semver.Version.parse(version)
+        v0216 = semver.Version.parse('0.2.16')
+        if version<v0216:
+            return cls.FromJsonObjOriginal(json_obj)
+        return cls.FromJsonObj0216(json_obj)
+
+    @classmethod
+    def FromJsonObjOriginal(cls, json_obj):
         if ((not json_obj['reason'] == 'compiler-message') or
                 (json_obj['message'] is None) or
                 (json_obj['message']['code'] is None)):
@@ -117,6 +126,23 @@ class ScoutVulnerability:
             src_extra=SrcExtra(
                 filename=json_obj['message']['spans'][0]['file_name'],
                 manifest=json_obj['manifest_path']))
+
+    @classmethod
+    def FromJsonObj0216(cls, json_obj):
+        if ((not json_obj['$message_type'] == 'diagnostic') or
+                (json_obj['message'] is None) or
+                (json_obj['level'] is None)):
+            return None  # raise Exception("probably not a scout vuln.")
+        return cls(
+            message=json_obj['message'],
+            code=json_obj['code']['code'],
+            level=json_obj['level'],
+            spans=[SpanObject.FromJsonObj(o) for o in json_obj['spans']],
+            src_path=json_obj['spans'][0]['file_name'],
+            src_line=json_obj['spans'][0]['line_start'],
+            src_extra=SrcExtra(
+                filename=json_obj['spans'][0]['file_name'],
+                manifest=json_obj['crate']))
 
 
 if __name__=="__main__":
