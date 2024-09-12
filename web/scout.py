@@ -42,19 +42,18 @@ class ScoutRunner(ScannerRunner):
         env = {
             'INPUT_TARGET': f'/scoutme/srcs/{self.path}',
             'RUST_BACKTRACE': 'full',
-            'INPUT_SCOUT_ARGS': self.get_format() + f" --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}",
+            'INPUT_SCOUT_ARGS': self.get_format() + f" -v --output-path /scoutme/{self.CONTAINER_RAW_REPORT_NAME}",
             'CARGO_TARGET_DIR': '/tmp',
         }
         envs = ' '.join(f'-e {key}="{value}"' for key, value in env.items())
         cmd = (f'docker run -i --rm {envs} -v {self.tmpdir}:/scoutme {self.IMAGE}')
         self.exec('run-image', [cmd])
 
-    @staticmethod
-    def _get_vulns_from_raw_report(raw_report):
+    def _get_vulns_from_raw_report(self, raw_report):
         for line in raw_report.splitlines():
             try:
                 msg = json.loads(line)
-                sv = ScoutVulnerability.FromJsonObj(msg)
+                sv = ScoutVulnerability.FromJsonObj(self.version, msg)
                 if sv is None: continue
                 yield sv.asFinding()
             except:
@@ -103,7 +102,7 @@ class ScoutVulnerability:
         )
 
     @classmethod
-    def FromJsonObj(cls, version, json_obj):
+    def FromJsonObj(cls, version: str, json_obj: dict):
         version = semver.Version.parse(version)
         v0216 = semver.Version.parse('0.2.16')
         if version<v0216:
@@ -120,7 +119,7 @@ class ScoutVulnerability:
             message=json_obj['message']['message'],
             code=json_obj['message']['code']['code'],
             level=json_obj['message']['level'],
-            spans=[SpanObject.FromJsonObj(o) for o in json_obj['message']['spans']],
+            spans=[SpanObject.FromJsonObjOriginal(o) for o in json_obj['message']['spans']],
             src_path=json_obj['message']['spans'][0]['file_name'],
             src_line=json_obj['message']['spans'][0]['line_start'],
             src_extra=SrcExtra(
@@ -137,7 +136,7 @@ class ScoutVulnerability:
             message=json_obj['message'],
             code=json_obj['code']['code'],
             level=json_obj['level'],
-            spans=[SpanObject.FromJsonObj(o) for o in json_obj['spans']],
+            spans=[SpanObject.FromJsonObj0216(o) for o in json_obj['spans']],
             src_path=json_obj['spans'][0]['file_name'],
             src_line=json_obj['spans'][0]['line_start'],
             src_extra=SrcExtra(
