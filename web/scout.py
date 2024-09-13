@@ -4,6 +4,7 @@ import sys
 from dataclasses import dataclass
 from typing import List
 
+import json5
 import semver
 
 from drunner import ScannerRunner
@@ -16,15 +17,22 @@ ScoutCodeCategories = {}
 class ScoutRunner(ScannerRunner):
     IMAGE = 'coinfabrik/scout:latest'
     CONTAINER_RAW_REPORT_NAME = os.path.join(ScannerRunner.OUTPUT_DIR_NAME, 'report.json')
+    _version = None
 
     def _get_version(self):
         ex = self.exec('run-get-version',
                        [f'docker run -i --rm -e INPUT_SCOUT_ARGS=--version {self.IMAGE}'])
-        ex.scan.scanner_version = self.version = ex.output
+        ex.scan.scanner_version = self._version = ex.output
         ex.scan.save()
 
+    @property
+    def version(self):
+        if self._version is None:
+            self._get_version()
+        return self._version.split(' ', 1)[1]
+
     def is_version(self, version):
-        return self.version.endswith(version)
+        return semver.Version.parse(self.version)==semver.Version.parse(version)
 
     def is_v0_2_10(self):
         return self.is_version('0.2.10')
@@ -50,14 +58,18 @@ class ScoutRunner(ScannerRunner):
         self.exec('run-image', [cmd])
 
     def _get_vulns_from_raw_report(self, raw_report):
+        version = self.version
         for line in raw_report.splitlines():
             try:
-                msg = json.loads(line)
-                sv = ScoutVulnerability.FromJsonObj(self.version, msg)
+                msg = json5.loads(line)
+                sv = ScoutVulnerability.FromJsonObj(version, msg)
                 if sv is None: continue
                 yield sv.asFinding()
-            except:
-                print(f"Invalid line in output: '{line}'. ignoring..", file=sys.stderr)
+            except Exception as err:
+                print("--8<-------------")
+                print(f"[{version}] Invalid line in output: '{line}'. ignoring..", file=sys.stderr)
+                print(repr(err))
+                print("--8<-------------")
 
     def process_report(self, raw_report):
         report = ResultsReport(
@@ -119,7 +131,7 @@ class ScoutVulnerability:
             message=json_obj['message']['message'],
             code=json_obj['message']['code']['code'],
             level=json_obj['message']['level'],
-            spans=[SpanObject.FromJsonObjOriginal(o) for o in json_obj['message']['spans']],
+            spans=[SpanObject.FromJsonObj(o) for o in json_obj['message']['spans']],
             src_path=json_obj['message']['spans'][0]['file_name'],
             src_line=json_obj['message']['spans'][0]['line_start'],
             src_extra=SrcExtra(
@@ -132,16 +144,18 @@ class ScoutVulnerability:
                 (json_obj['message'] is None) or
                 (json_obj['level'] is None)):
             return None  # raise Exception("probably not a scout vuln.")
+        spans = [SpanObject.FromJsonObj(o) for o in json_obj['spans']]
+        src_extra = SrcExtra(
+                filename=json_obj['spans'][0]['file_name'],
+                manifest=json_obj['crate'])
         return cls(
             message=json_obj['message'],
             code=json_obj['code']['code'],
             level=json_obj['level'],
-            spans=[SpanObject.FromJsonObj0216(o) for o in json_obj['spans']],
+            spans=spans,
             src_path=json_obj['spans'][0]['file_name'],
             src_line=json_obj['spans'][0]['line_start'],
-            src_extra=SrcExtra(
-                filename=json_obj['spans'][0]['file_name'],
-                manifest=json_obj['crate']))
+            src_extra=src_extra)
 
 
 if __name__=="__main__":

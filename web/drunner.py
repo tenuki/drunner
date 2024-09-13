@@ -245,11 +245,8 @@ def test_add_site():
     generic_task_runner(e.id)
 
 
-try:
-    m = __import__('scout')
-    ScannerRunner.Register(getattr(m, 'ScoutRunner'), 'scout')
-except:
-    pass
+m = __import__('scout')
+ScannerRunner.Register(getattr(m, 'ScoutRunner'), 'scout')
 
 
 if __name__ == '__main__':
