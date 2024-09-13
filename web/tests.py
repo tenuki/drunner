@@ -197,14 +197,21 @@ class RawReportPre0216(unittest.TestCase):
         self.assertTrue(isinstance(vuln, ScoutVulnerability))
         self.assertEqual(vuln.level, "warning")
 
-    def test_basic_vuln_format_post(self):
+    def test_basic_vuln_format_new_version(self):
         obj_json = json5.loads(self.RAW_LINE_BASIC_from_v0216_TEST)
         vuln = ScoutVulnerability.FromJsonObj0216(obj_json)
         self.assertTrue(isinstance(vuln, ScoutVulnerability))
         self.assertEqual(vuln.level, "warning")
 
+    def test_basic_vuln_format_new_version_bytes(self):
+        bytes = self.RAW_LINE_BASIC_from_v0216_TEST.encode('latin-1')
+        obj_json = json5.loads(bytes)
+        vuln = ScoutVulnerability.FromJsonObj0216(obj_json)
+        self.assertTrue(isinstance(vuln, ScoutVulnerability))
+        self.assertEqual(vuln.level, "warning")
 
-class RegressionReport(unittest.TestCase):
-    def test_me(self):
-        scan = ScannerRunner.FromId(224)
-        scan.rebuild()
+
+# class RegressionReport(unittest.TestCase):
+#     def test_me(self):
+#         scan = ScannerRunner.FromId(224)
+#         scan.rebuild()

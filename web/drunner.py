@@ -105,7 +105,7 @@ class ScannerRunner(object):
         self.run_image()
         raw_report = self.fetch_raw_output()
         model.Report.Create(docker=self.m, is_raw=True, content=raw_report)
-        report = self.process_report(raw_report)
+        report = self.process_report(self.m.get_raw_report().content)
         model.Report.Create(docker=self.m, is_raw=False, content=report.to_json())
         return report
 
@@ -156,7 +156,7 @@ class ScannerRunner(object):
         ex3.scan.rev_hash = ex3.output
         ex3.scan.save()
 
-    def fetch_raw_output(self):
+    def fetch_raw_output(self) -> bytes:
         with open(os.path.join(self.tmpdir, self.CONTAINER_RAW_REPORT_NAME), 'rb') as f:
             return f.read()
 

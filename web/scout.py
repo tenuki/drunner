@@ -83,6 +83,7 @@ class ScoutRunner(ScannerRunner):
             report.addFinding(vuln)
         return report
 
+
 ScannerRunner.Register(ScoutRunner, 'scout')
 
 
