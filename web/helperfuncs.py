@@ -59,7 +59,7 @@ def render(template, **kwargs):
 
     for f in [list, len, url_for, repr, type, json, enumwid,
               short_date, mkrand, lines, reversed, max, min,
-              strip, float_to_seconds]:
+              strip, float_to_seconds, dir]:
         new[f.__name__] = f
         setattr(funcs, f.__name__, f)
     new['funcs'] = funcs

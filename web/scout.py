@@ -20,10 +20,12 @@ class ScoutRunner(ScannerRunner):
     _version = None
 
     def _get_version(self):
-        ex = self.exec('run-get-version',
-                       [f'docker run -i --rm -e INPUT_SCOUT_ARGS=--version {self.IMAGE}'])
-        ex.scan.scanner_version = self._version = ex.output
-        ex.scan.save()
+        if self.m.scanner_version is None:
+            ex = self.exec('run-get-version',
+                           [f'docker run -i --rm -e INPUT_SCOUT_ARGS=--version {self.IMAGE}'])
+            ex.scan.scanner_version = self._version = ex.output
+            ex.scan.save()
+        self._version = self.m.scanner_version
 
     @property
     def version(self):

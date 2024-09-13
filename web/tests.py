@@ -202,3 +202,9 @@ class RawReportPre0216(unittest.TestCase):
         vuln = ScoutVulnerability.FromJsonObj0216(obj_json)
         self.assertTrue(isinstance(vuln, ScoutVulnerability))
         self.assertEqual(vuln.level, "warning")
+
+
+class RegressionReport(unittest.TestCase):
+    def test_me(self):
+        scan = ScannerRunner.FromId(224)
+        scan.rebuild()

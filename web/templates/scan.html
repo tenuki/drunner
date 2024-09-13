@@ -23,8 +23,20 @@
     setTimeout(update_progress, 100);
 </script>
 
+<div class="box">
+    <a class="button is-small is-responsive is-info is-dark"
+       href="{{ url_for('rebuild', scan_id=scan.id) }}">
+        rebuild
+    </a>
+    <a class="button is-small is-responsive is-info is-dark disabled">
+    {{ scan.id }}
+    </a>
+    <a class="button is-small is-responsive is-info is-dark disabled">
+    {{ scan.scanner }}|{{ scan.scanner_version }}|{{ scan.id }}
+    </a>
+<!--    {{ '<br/>'.join(dir(scan)) | safe }}-->
+</div>
 
-<h1>Scan execution</h1>
 
 <!--<fieldset disabled>-->
 

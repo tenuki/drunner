@@ -1,3 +1,4 @@
+import html
 import json
 import os
 
@@ -120,9 +121,18 @@ def split_ms(a_str:str):
 
 @app.route('/scan/<scan_id>/rebuild')
 def rebuild(scan_id: int):
+    scan_id = int(scan_id)
     scan = ScannerRunner.FromId(scan_id)
     scan.rebuild()
     return redirect(url_for('scan_exec', id=scan_id))
+
+
+@app.route('/info/')
+def scanners():
+    info = {
+        'scanners': repr(ScannerRunner.Scanners),
+    }
+    return html.escape(json.dumps(info, indent=2))
 
 
 @app.route('/scan-exec/<id>')
