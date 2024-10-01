@@ -156,7 +156,7 @@ class ScannerRunner(object):
         ex3.scan.rev_hash = ex3.output
         ex3.scan.save()
 
-    def fetch_raw_output(self):
+    def fetch_raw_output(self) -> bytes:
         with open(os.path.join(self.tmpdir, self.CONTAINER_RAW_REPORT_NAME), 'rb') as f:
             return f.read()
 
