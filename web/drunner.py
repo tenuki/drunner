@@ -105,7 +105,7 @@ class ScannerRunner(object):
         self.run_image()
         raw_report = self.fetch_raw_output()
         model.Report.Create(docker=self.m, is_raw=True, content=raw_report)
-        report = self.process_report(raw_report)
+        report = self.process_report(self.m.get_raw_report().content)
         model.Report.Create(docker=self.m, is_raw=False, content=report.to_json())
         return report
 

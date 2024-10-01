@@ -2,6 +2,7 @@ import json
 import os
 import sys
 from dataclasses import dataclass
+import traceback
 from typing import List
 
 import json5
@@ -71,6 +72,7 @@ class ScoutRunner(ScannerRunner):
                 print("--8<-------------")
                 print(f"[{version}] Invalid line in output: '{line}'. ignoring..", file=sys.stderr)
                 print(repr(err))
+                traceback.print_exc()
                 print("--8<-------------")
 
     def process_report(self, raw_report):
